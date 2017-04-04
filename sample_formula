@@ -1,0 +1,36 @@
+(set-option :produce-models true) ; enable model generation
+(set-option :produce-proofs true) ; enable proof generation
+
+; match up w/ accepting NFA
+(declare-const x00p Bool)
+(declare-const x01p Bool)
+(declare-const x10p Bool)
+(declare-const x11p Bool)
+
+; match up w/ rejecting NFA
+(declare-const y00pp Bool)
+(declare-const y01pp Bool)
+(declare-const y10pp Bool)
+(declare-const y11pp Bool)
+
+; transitions in DFA
+(declare-const d0a0 Bool)
+(declare-const d0a1 Bool)
+(declare-const d1a0 Bool)
+(declare-const d1a1 Bool)
+(declare-const d0b0 Bool)
+(declare-const d0b1 Bool)
+(declare-const d1b0 Bool)
+(declare-const d1b1 Bool)
+
+; assert DFA not NFA
+(assert (or (not d0a0) (not d0a1)))
+(assert (or (not d1a0) (not d1a1)))
+(assert (or (not d0b0) (not d0b1)))
+(assert (or (not d1b0) (not d1b1)))
+
+; add transitions to DFA
+(assert (=> (and x00p d0a0) x01p))
+
+(check-sat)
+(get-model)
