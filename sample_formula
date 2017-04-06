@@ -31,6 +31,22 @@
 
 ; add transitions to DFA
 (assert (=> (and x00p d0a0) x01p))
+(assert (=> (and x00p d0a1) x11p))
+(assert (=> (and x01p d0a0) x00p))
+(assert (=> (and x01p d0a1) x10p))
+(assert (=> (and x10p d1a0) x01p))
+(assert (=> (and x10p d1a1) x11p))
+(assert (=> (and x11p d1a0) x00p))
+(assert (=> (and x11p d1a1) x10p))
+
+(assert (=> (and y00pp d0b0) y00pp))
+(assert (=> (and y00pp d0b1) y10pp))
+(assert (=> (and y01pp d0b0) y00pp))
+(assert (=> (and y01pp d0b1) y10pp))
+(assert (=> (and y10pp d1b0) y00pp))
+(assert (=> (and y10pp d1b1) y10pp))
+(assert (=> (and y11pp d1b0) y00pp))
+(assert (=> (and y11pp d1b1) y10pp))
 
 (check-sat)
 (get-model)
