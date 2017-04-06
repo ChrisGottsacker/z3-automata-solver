@@ -1,3 +1,7 @@
+; Accepting NFA: f0p, d0pa1p, d1pa0p
+; Rejecting NFA: f0pp, d1ppb0pp, d0ppb0pp
+
+
 (set-option :produce-models true) ; enable model generation
 (set-option :produce-proofs true) ; enable proof generation
 
@@ -44,7 +48,7 @@
 (assert x00p)
 (assert y01pp)
 
-; add transitions to DFA
+; assert transitions from accepting NFA
 (assert (=> (and x00p d0a0) x01p))
 (assert (=> (and x00p d0a1) x11p))
 (assert (=> (and x01p d0a0) x00p))
@@ -54,6 +58,7 @@
 (assert (=> (and x11p d1a0) x00p))
 (assert (=> (and x11p d1a1) x10p))
 
+; assert transitions from rejecting NFA
 (assert (=> (and y00pp d0b0) y00pp))
 (assert (=> (and y00pp d0b1) y10pp))
 (assert (=> (and y01pp d0b0) y00pp))
