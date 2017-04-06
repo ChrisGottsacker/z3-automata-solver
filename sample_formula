@@ -1,6 +1,10 @@
 (set-option :produce-models true) ; enable model generation
 (set-option :produce-proofs true) ; enable proof generation
 
+; final states in DFA
+(declare-const f0 Bool)
+(declare-const f1 Bool)
+
 ; match up w/ accepting NFA
 (declare-const x00p Bool)
 (declare-const x01p Bool)
@@ -23,11 +27,22 @@
 (declare-const d1b0 Bool)
 (declare-const d1b1 Bool)
 
+
 ; assert DFA not NFA
 (assert (or (not d0a0) (not d0a1)))
 (assert (or (not d1a0) (not d1a1)))
 (assert (or (not d0b0) (not d0b1)))
 (assert (or (not d1b0) (not d1b1)))
+
+; assert DFA's transition function is total (i.e. complete DFA)
+(assert (or d0a0 d0a1))
+(assert (or d1a0 d1a1))
+(assert (or d0b0 d0b1))
+(assert (or d1b0 d1b1))
+
+; assert start states
+(assert x00p)
+(assert y01pp)
 
 ; add transitions to DFA
 (assert (=> (and x00p d0a0) x01p))
@@ -47,6 +62,13 @@
 (assert (=> (and y10pp d1b1) y10pp))
 (assert (=> (and y11pp d1b0) y00pp))
 (assert (=> (and y11pp d1b1) y10pp))
+
+; add final-state constraints
+(assert (=> x00p f0))
+(assert (=> x10p f1))
+
+(assert (=> y00pp (not f0) ))
+(assert (=> y10pp (not f1) ))
 
 (check-sat)
 (get-model)
