@@ -1,5 +1,5 @@
 ; Accepting NFA: f0p, d0pa1p, d1pa0p
-; Rejecting NFA: f0pp, d1ppb0pp, d0ppb0pp
+; Rejecting NFA: f1pp, d0ppb1pp, d1ppb1pp
 
 
 (set-option :produce-models true) ; enable model generation
@@ -16,10 +16,10 @@
 (declare-const x11p Bool)
 
 ; match up w/ rejecting NFA
-(declare-const y00pp Bool)
 (declare-const y01pp Bool)
-(declare-const y10pp Bool)
+(declare-const y00pp Bool)
 (declare-const y11pp Bool)
+(declare-const y10pp Bool)
 
 ; transitions in DFA
 (declare-const d0a0 Bool)
@@ -46,7 +46,7 @@
 
 ; assert start states
 (assert x00p)
-(assert y01pp)
+(assert y00pp)
 
 ; assert transitions from accepting NFA
 (assert (=> (and x00p d0a0) x01p))
@@ -59,21 +59,21 @@
 (assert (=> (and x11p d1a1) x10p))
 
 ; assert transitions from rejecting NFA
-(assert (=> (and y00pp d0b0) y00pp))
-(assert (=> (and y00pp d0b1) y10pp))
-(assert (=> (and y01pp d0b0) y00pp))
-(assert (=> (and y01pp d0b1) y10pp))
-(assert (=> (and y10pp d1b0) y00pp))
-(assert (=> (and y10pp d1b1) y10pp))
-(assert (=> (and y11pp d1b0) y00pp))
-(assert (=> (and y11pp d1b1) y10pp))
+(assert (=> (and y01pp d0b0) y01pp))
+(assert (=> (and y01pp d0b1) y11pp))
+(assert (=> (and y00pp d0b0) y01pp))
+(assert (=> (and y00pp d0b1) y11pp))
+(assert (=> (and y11pp d1b0) y01pp))
+(assert (=> (and y11pp d1b1) y11pp))
+(assert (=> (and y10pp d1b0) y01pp))
+(assert (=> (and y10pp d1b1) y11pp))
 
 ; add final-state constraints
 (assert (=> x00p f0))
 (assert (=> x10p f1))
 
-(assert (=> y00pp (not f0) ))
-(assert (=> y10pp (not f1) ))
+(assert (=> y01pp (not f0) ))
+(assert (=> y11pp (not f1) ))
 
 (check-sat)
 (get-model)
