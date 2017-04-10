@@ -1,0 +1,37 @@
+Building and Installing Z3 (for Java):
+	Note: Installing Z3 requires git, python, maven, and a C++ compiler to be installed and to reside in your PATH environment variable.
+
+	The following instructions are taken from the README from The Z3 Theorem Prover's GitHub repository.
+
+	First, clone Z3:
+		git clone https://github.com/Z3Prover/z3.git
+		Make sure that you use the 4.4.1 release:
+
+		git checkout z3-4.4.1
+
+	Next, we generate a Z3 Makefile with the --java option to get the Z3 Java bindings.
+		python scripts/mk_make.py --java
+
+	Now, we build Z3
+		cd build
+		make all
+
+	Install the com.microsoft.z3.jar file from the build directory of your Z3 working copy into the local Maven directory:
+		mvn install:install-file -Dfile=com.microsoft.z3.jar -DgroupId=com.microsoft -DartifactId=z3 -Dversion=4.4.1 -Dpackaging=jar
+
+
+Build & Run example:
+	configure Z3 (in /):
+		python scripts/mk_make.py --java
+
+	build (in /build):
+		make examples
+
+	It will create JavaExample.class in the build directory,
+	which can be run on Windows via
+		java -cp com.microsoft.z3.jar;. JavaExample
+
+	On Linux and FreeBSD, we must use
+		LD_LIBRARY_PATH=. java -cp com.microsoft.z3.jar:. JavaExample
+	On OSX, the corresponding option is DYLD_LIBRARY_PATH:
+		DYLD_LIBRARY_PATH=. java -cp com.microsoft.z3.jar:. JavaExample
