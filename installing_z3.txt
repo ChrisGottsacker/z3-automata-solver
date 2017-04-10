@@ -35,3 +35,10 @@ Build & Run example:
 		LD_LIBRARY_PATH=. java -cp com.microsoft.z3.jar:. JavaExample
 	On OSX, the corresponding option is DYLD_LIBRARY_PATH:
 		DYLD_LIBRARY_PATH=. java -cp com.microsoft.z3.jar:. JavaExample
+
+Build & Run your code:
+	build:
+		javac -cp path/to/z3/build/com.microsoft.z3.jar path/to/yourcode.java
+
+	run:
+		java path/to/yourcode.java
