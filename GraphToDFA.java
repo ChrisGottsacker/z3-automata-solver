@@ -7,11 +7,9 @@ class GraphToDFA
     System.out.println("--------------------------------------------------");
     System.out.println("\nDFA Example\n");
 
-
-
     Optimize opt = ctx.mkOptimize();
 
-    int n = 5;
+    int n = 2;
     int aSz = 2;
     int rSz = 2;
     Character alphabet[] = {'a', 'b'};
@@ -67,24 +65,24 @@ class GraphToDFA
 
     // assert DFA not NFA
     for (int j = 0; j < alphabet.length; j++) {
-	  for (int i = 0; i < n; i++) {
-	    for (int k = 0; k < n; k++) {
-	      for (int l = n-1; l > k; l--) {
-	      	opt.Assert(ctx.mkOr(ctx.mkNot(trans[i][j][k]), ctx.mkNot(trans[i][j][l])));
-	      }
-	    } 	
-	  }
+    	for (int i = 0; i < n; i++) {
+    		BoolExpr bexp = ctx.mkBool(false);
+    		for (int k = 0; k < n; k++) {
+    			bexp = ctx.mkOr(ctx.mkNot(trans[i][j][k]), bexp);
+    		} 	
+    		opt.Assert(bexp);
+    	}
     }
 
     // assert DFA's transition function is total (i.e. complete DFA)
     for (int j = 0; j < alphabet.length; j++) {
     	for (int i = 0; i < n; i++) {
-        	for (int k = 0; k < n; k++) {
-                for (int l = n-1; l > k; l--) {
-                	opt.Assert(ctx.mkOr(trans[i][j][k], trans[i][j][l]));
-                }
-        	}
-        }
+    		BoolExpr bexp = ctx.mkBool(false);
+    		for (int k = 0; k < n; k++) {
+    			bexp = ctx.mkOr(trans[i][j][k], bexp);
+    		} 	
+    		opt.Assert(bexp);
+    	}
     }
 
     // assert start states
