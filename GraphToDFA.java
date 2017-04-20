@@ -1,9 +1,11 @@
 import java.util.*;
+
 import com.microsoft.z3.*;
 
 class GraphToDFA
 {  
-  private void FindDFA(Context ctx) {
+  private void FindDFA(Context ctx) 
+  {
     System.out.println("--------------------------------------------------");
     System.out.println("\nDFA Example\n");
 
@@ -132,50 +134,118 @@ class GraphToDFA
 	    sat = opt.Check().toString();
 		if (sat.equals("SATISFIABLE")) {
 		    System.out.println(sat + " with " + numStates + " states"); 
-		    System.out.println(opt.getModel());
+		    Model model = opt.getModel();
+		    BoolExpr[][][] transAssignments = TransitionsAssignments(model, trans, numStates, alphabet.length);
+		    BoolExpr[] finalStateAssignments = FinalStateAssignments(model, finalStates, numStates);
+		    
+		    PrintTransitions(transAssignments, numStates, alphabet);
+		    PrintFinalStates(finalStateAssignments, numStates);		    
+		    
+		    // Uncomment to print the model
+		    // System.out.println(model);
+		    
 		    System.out.println("\n--------------------------------------------------\n");
 		}
 		numStates++;
     }
   }
 
-   public static void main(String[] args)
-   {
-	   GraphToDFA p = new GraphToDFA();
-	   try
-	   {
-		   com.microsoft.z3.Global.ToggleWarningMessages(true);
-		   Log.open("test.log");
+  // returns an array with values showing which transitions are included in the output
+  private BoolExpr[][][] TransitionsAssignments(Model model, BoolExpr[][][] trans, int numStates, int alphaLen) 
+  {
+	
+	BoolExpr[][][] transAssignments = new BoolExpr[numStates][alphaLen][numStates];
+	
+	for (int i = 0; i < numStates; i++) {
+		for (int j = 0; j < alphaLen; j++) {
+			for (int k = 0; k < numStates; k++) {
+				transAssignments[i][j][k] = (BoolExpr) model.getConstInterp(trans[i][j][k]);
+			}
+		}
+	}
+		
+	return transAssignments;
+  }
 
-		   System.out.print("Z3 Major Version: ");
-		   System.out.println(Version.getMajor());
-		   System.out.print("Z3 Full Version: ");
-		   System.out.println(Version.getString());
-		   System.out.print("Z3 Full Version String: ");
-		   System.out.println(Version.getFullVersion());
+  // returns an array with values showing which final states are included in the output
+  private BoolExpr[] FinalStateAssignments(Model model, BoolExpr[] finalStates, int numStates) 
+  {
+	BoolExpr[] finalStateAssignments = new BoolExpr[numStates];
+	
+	for (int i = 0; i < numStates; i++) {
+		finalStateAssignments[i] = (BoolExpr) model.getConstInterp(finalStates[i]);
+	}
+	
+	return finalStateAssignments;
+  }
+  
+  /*
+   * Prints all the final states in the output DFA
+   */
+  private void PrintFinalStates(BoolExpr[] finalStateAssignments, int numStates) 
+  {
+	  System.out.println("\nOutput DFA Final States: ");
+	  for (int i = 0; i < numStates; i++) {
+			System.out.println("State " + i + ": " + finalStateAssignments[i]);
+	  }
+	
+  }
 
-		   {
-			   // This example needs both the model and proof generation turned on
-			   HashMap<String, String> cfg = new HashMap<String, String>();
-			   cfg.put("model", "true");
-			   cfg.put("proof", "true");
-			   Context ctx = new Context(cfg);
+  /*
+   * Prints all the transitions in the output DFA
+   */
+  private void PrintTransitions(BoolExpr[][][] transAssignments, int numStates, Character[] alphabet) 
+  {
+	  System.out.println("\nOutput DFA Transitions: \n");
+	  System.out.println("From    Transition On    To    Value");
+	  for (int i = 0; i < numStates; i++) {
+		  for (int j = 0; j < alphabet.length; j++) {
+			  for (int k = 0; k < numStates; k++) {
+				  if (transAssignments[i][j][k].toString().equals("true"))
+					  System.out.println(" " + i + "          " + alphabet[j] + "            "  + k + "     " + transAssignments[i][j][k]);
+			  }
+		  }
+	  }
+  }
+	
 
-			   p.FindDFA(ctx);
-		   }
-		   Log.close();
-		   if (Log.isOpen())
-			   System.out.println("Log is still open!");
-	   } catch (Z3Exception ex)
-	   {
-		   System.out.println("Z3 Managed Exception: " + ex.getMessage());
-		   System.out.println("Stack trace: ");
-		   ex.printStackTrace(System.out);
-	   } catch (Exception ex)
-	   {
-		   System.out.println("Unknown Exception: " + ex.getMessage());
-		   System.out.println("Stack trace: ");
-		   ex.printStackTrace(System.out);
-	   }
+  public static void main(String[] args)
+  {
+	  GraphToDFA p = new GraphToDFA();
+	  try
+	  {
+		  com.microsoft.z3.Global.ToggleWarningMessages(true);
+		  Log.open("test.log");
+
+		  System.out.print("Z3 Major Version: ");
+		  System.out.println(Version.getMajor());
+		  System.out.print("Z3 Full Version: ");
+		  System.out.println(Version.getString());
+		  System.out.print("Z3 Full Version String: ");
+		  System.out.println(Version.getFullVersion());
+
+		  {
+			  // This example needs both the model and proof generation turned on
+			  HashMap<String, String> cfg = new HashMap<String, String>();
+			  cfg.put("model", "true");
+			  cfg.put("proof", "true");
+			  Context ctx = new Context(cfg);
+
+			  p.FindDFA(ctx);
+		  }
+		  Log.close();
+		  if (Log.isOpen())
+			  System.out.println("Log is still open!");
+	  } catch (Z3Exception ex)
+	  {
+		  System.out.println("Z3 Managed Exception: " + ex.getMessage());
+		  System.out.println("Stack trace: ");
+		  ex.printStackTrace(System.out);
+	  } catch (Exception ex)
+	  {
+		  System.out.println("Unknown Exception: " + ex.getMessage());
+		  System.out.println("Stack trace: ");
+		  ex.printStackTrace(System.out);
+	  }
    }
 }
