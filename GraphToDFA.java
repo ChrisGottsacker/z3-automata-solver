@@ -1,14 +1,16 @@
 import java.util.*;
+
 import com.microsoft.z3.*;
 
 class GraphToDFA
 {  
-  private void FindDFA(Context ctx) {
+  private void FindDFA(Context ctx) 
+  {
     System.out.println("--------------------------------------------------");
     System.out.println("\nDFA Example\n");
 
     String sat = "UNSATISFIABLE";
-    int n = 1;
+    int numStates = 1;
     
     // go in a loop and find the min number of states which are satisfiable
     while (sat.equals("UNSATISFIABLE")) {
@@ -31,33 +33,33 @@ class GraphToDFA
 	    };
 	
 	    // Final states in DFA
-	    BoolExpr[] finalStates = new BoolExpr[n];
-	    for (int i = 0; i < n; i++) {
+	    BoolExpr[] finalStates = new BoolExpr[numStates];
+	    for (int i = 0; i < numStates; i++) {
 	    	finalStates[i] = ctx.mkBoolConst("f"+i+"");
 	    }
 	
 	    //match up with accepting NFA
-	    BoolExpr[][] aNFA = new BoolExpr[n][aSz];
-	    for (int i = 0; i < n; i++) {
+	    BoolExpr[][] aNFA = new BoolExpr[numStates][aSz];
+	    for (int i = 0; i < numStates; i++) {
 	      for (int j = 0; j < aSz; j++) {
-	      	 aNFA[i][j] = ctx.mkBoolConst("x"+i+""+j+"p");
+	      	 aNFA[i][j] = ctx.mkBoolConst("x"+i+""+j);
 	      }
 	    }
 	
 	    //match up with rejecting NFA
-	    BoolExpr[][] rNFA = new BoolExpr[n][rSz];
-	    for (int i = 0; i < n; i++) {
+	    BoolExpr[][] rNFA = new BoolExpr[numStates][rSz];
+	    for (int i = 0; i < numStates; i++) {
 	      for (int j = 0; j < rSz; j++) {
-	      	 rNFA[i][j] = ctx.mkBoolConst("y"+i+""+j+"pp");
+	      	 rNFA[i][j] = ctx.mkBoolConst("y"+i+""+j);
 	      }
 	    }
 	
 	    // transitions in DFA
-	    BoolExpr[][][] trans = new BoolExpr[n][alphabet.length][n];
+	    BoolExpr[][][] trans = new BoolExpr[numStates][alphabet.length][numStates];
 	    
-	    for (int i = 0; i < n; i++) {
+	    for (int i = 0; i < numStates; i++) {
 	    	 for (int j = 0; j < alphabet.length; j++) { 
-	         	for (int k = 0; k < n; k++) {
+	         	for (int k = 0; k < numStates; k++) {
 	            	trans[i][j][k] = ctx.mkBoolConst("d"+i+""+alphabet[j]+""+k+"");
 	            }
 	         }
@@ -65,9 +67,9 @@ class GraphToDFA
 	
 	    // assert DFA not NFA
 	    for (int j = 0; j < alphabet.length; j++) {
-	    	for (int i = 0; i < n; i++) {
+	    	for (int i = 0; i < numStates; i++) {
 	    		BoolExpr bexp = ctx.mkBool(false);
-	    		for (int k = 0; k < n; k++) {
+	    		for (int k = 0; k < numStates; k++) {
 	    			bexp = ctx.mkOr(ctx.mkNot(trans[i][j][k]), bexp);
 	    		} 	
 	    		opt.Assert(bexp);
@@ -76,9 +78,9 @@ class GraphToDFA
 	
 	    // assert DFA's transition function is total (i.e. complete DFA)
 	    for (int j = 0; j < alphabet.length; j++) {
-	    	for (int i = 0; i < n; i++) {
+	    	for (int i = 0; i < numStates; i++) {
 	    		BoolExpr bexp = ctx.mkBool(false);
-	    		for (int k = 0; k < n; k++) {
+	    		for (int k = 0; k < numStates; k++) {
 	    			bexp = ctx.mkOr(trans[i][j][k], bexp);
 	    		} 	
 	    		opt.Assert(bexp);
@@ -90,9 +92,9 @@ class GraphToDFA
 	    opt.Assert(rNFA[0][0]);
 	
 	    // assert transitions from accepting NFA
-	    for (int i = 0; i < n; i++) {
+	    for (int i = 0; i < numStates; i++) {
 	    	for (int j = 0; j < aSz; j++) {
-	        	for (int k = 0; k < n; k++) {
+	        	for (int k = 0; k < numStates; k++) {
 	            	for (int l = 0; l < aSz; l++) {
 	                	if (acceptingTransitions[j][l] >= 0) {
 	                		opt.Assert(ctx.mkImplies(ctx.mkAnd(aNFA[i][j], trans[i][ acceptingTransitions[j][l] ][k]), aNFA[k][l]));
@@ -103,9 +105,9 @@ class GraphToDFA
 	    }
 	
 	    // assert transitions from rejecting NFA
-	    for (int i = 0; i < n; i++) {
+	    for (int i = 0; i < numStates; i++) {
 	    	for (int j = 0; j < rSz; j++) {
-	        	for (int k = 0; k < n; k++) {
+	        	for (int k = 0; k < numStates; k++) {
 	            	for (int l = 0; l < rSz; l++) {
 	                	if (rejectingTransitions[j][l] >= 0) {
 	                    	opt.Assert(ctx.mkImplies(ctx.mkAnd(rNFA[i][j], trans[i][ rejectingTransitions[j][l] ][k]), rNFA[k][l]));
@@ -116,13 +118,13 @@ class GraphToDFA
 	    }
 	
 	    // add final-state constraints
-	    for (int i = 0; i < n; i++) {
+	    for (int i = 0; i < numStates; i++) {
 	        for (int j = 0; j < acceptingFinalStates.length; j++) {
 	              opt.Assert(ctx.mkImplies(aNFA[i][ acceptingFinalStates[j]], finalStates[i]));       	 
 	        }
 	      }
 	    
-	    for (int i = 0; i < n; i++) {
+	    for (int i = 0; i < numStates; i++) {
 	    	for (int j = 0; j < rejectingFinalStates.length; j++) {
 	        	opt.Assert(ctx.mkImplies(rNFA[i][rejectingFinalStates[j]], ctx.mkNot(finalStates[i])));
 	        }
@@ -131,51 +133,119 @@ class GraphToDFA
 	    // satisfiable or unsatisfiable
 	    sat = opt.Check().toString();
 		if (sat.equals("SATISFIABLE")) {
-		    System.out.println(sat + " with " + n + " states"); 
-		    System.out.println(opt.getModel());
+		    System.out.println(sat + " with " + numStates + " states"); 
+		    Model model = opt.getModel();
+		    BoolExpr[][][] transAssignments = TransitionsAssignments(model, trans, numStates, alphabet.length);
+		    BoolExpr[] finalStateAssignments = FinalStateAssignments(model, finalStates, numStates);
+		    
+		    PrintTransitions(transAssignments, numStates, alphabet);
+		    PrintFinalStates(finalStateAssignments, numStates);		    
+		    
+		    // Uncomment to print the model
+		    // System.out.println(model);
+		    
 		    System.out.println("\n--------------------------------------------------\n");
 		}
-	    n++;
+		numStates++;
     }
   }
 
-   public static void main(String[] args)
-   {
-	   GraphToDFA p = new GraphToDFA();
-	   try
-	   {
-		   com.microsoft.z3.Global.ToggleWarningMessages(true);
-		   Log.open("test.log");
+  // returns an array with values showing which transitions are included in the output
+  private BoolExpr[][][] TransitionsAssignments(Model model, BoolExpr[][][] trans, int numStates, int alphaLen) 
+  {
+	
+	BoolExpr[][][] transAssignments = new BoolExpr[numStates][alphaLen][numStates];
+	
+	for (int i = 0; i < numStates; i++) {
+		for (int j = 0; j < alphaLen; j++) {
+			for (int k = 0; k < numStates; k++) {
+				transAssignments[i][j][k] = (BoolExpr) model.getConstInterp(trans[i][j][k]);
+			}
+		}
+	}
+		
+	return transAssignments;
+  }
 
-		   System.out.print("Z3 Major Version: ");
-		   System.out.println(Version.getMajor());
-		   System.out.print("Z3 Full Version: ");
-		   System.out.println(Version.getString());
-		   System.out.print("Z3 Full Version String: ");
-		   System.out.println(Version.getFullVersion());
+  // returns an array with values showing which final states are included in the output
+  private BoolExpr[] FinalStateAssignments(Model model, BoolExpr[] finalStates, int numStates) 
+  {
+	BoolExpr[] finalStateAssignments = new BoolExpr[numStates];
+	
+	for (int i = 0; i < numStates; i++) {
+		finalStateAssignments[i] = (BoolExpr) model.getConstInterp(finalStates[i]);
+	}
+	
+	return finalStateAssignments;
+  }
+  
+  /*
+   * Prints all the final states in the output DFA
+   */
+  private void PrintFinalStates(BoolExpr[] finalStateAssignments, int numStates) 
+  {
+	  System.out.println("\nOutput DFA Final States: ");
+	  for (int i = 0; i < numStates; i++) {
+			System.out.println("State " + i + ": " + finalStateAssignments[i]);
+	  }
+	
+  }
 
-		   {
-			   // This example needs both the model and proof generation turned on
-			   HashMap<String, String> cfg = new HashMap<String, String>();
-			   cfg.put("model", "true");
-			   cfg.put("proof", "true");
-			   Context ctx = new Context(cfg);
+  /*
+   * Prints all the transitions in the output DFA
+   */
+  private void PrintTransitions(BoolExpr[][][] transAssignments, int numStates, Character[] alphabet) 
+  {
+	  System.out.println("\nOutput DFA Transitions: \n");
+	  System.out.println("From    Transition On    To    Value");
+	  for (int i = 0; i < numStates; i++) {
+		  for (int j = 0; j < alphabet.length; j++) {
+			  for (int k = 0; k < numStates; k++) {
+				  if (transAssignments[i][j][k].toString().equals("true"))
+					  System.out.println(" " + i + "          " + alphabet[j] + "            "  + k + "     " + transAssignments[i][j][k]);
+			  }
+		  }
+	  }
+  }
+	
 
-			   p.FindDFA(ctx);
-		   }
-		   Log.close();
-		   if (Log.isOpen())
-			   System.out.println("Log is still open!");
-	   } catch (Z3Exception ex)
-	   {
-		   System.out.println("Z3 Managed Exception: " + ex.getMessage());
-		   System.out.println("Stack trace: ");
-		   ex.printStackTrace(System.out);
-	   } catch (Exception ex)
-	   {
-		   System.out.println("Unknown Exception: " + ex.getMessage());
-		   System.out.println("Stack trace: ");
-		   ex.printStackTrace(System.out);
-	   }
+  public static void main(String[] args)
+  {
+	  GraphToDFA p = new GraphToDFA();
+	  try
+	  {
+		  com.microsoft.z3.Global.ToggleWarningMessages(true);
+		  Log.open("test.log");
+
+		  System.out.print("Z3 Major Version: ");
+		  System.out.println(Version.getMajor());
+		  System.out.print("Z3 Full Version: ");
+		  System.out.println(Version.getString());
+		  System.out.print("Z3 Full Version String: ");
+		  System.out.println(Version.getFullVersion());
+
+		  {
+			  // This example needs both the model and proof generation turned on
+			  HashMap<String, String> cfg = new HashMap<String, String>();
+			  cfg.put("model", "true");
+			  cfg.put("proof", "true");
+			  Context ctx = new Context(cfg);
+
+			  p.FindDFA(ctx);
+		  }
+		  Log.close();
+		  if (Log.isOpen())
+			  System.out.println("Log is still open!");
+	  } catch (Z3Exception ex)
+	  {
+		  System.out.println("Z3 Managed Exception: " + ex.getMessage());
+		  System.out.println("Stack trace: ");
+		  ex.printStackTrace(System.out);
+	  } catch (Exception ex)
+	  {
+		  System.out.println("Unknown Exception: " + ex.getMessage());
+		  System.out.println("Stack trace: ");
+		  ex.printStackTrace(System.out);
+	  }
    }
 }
