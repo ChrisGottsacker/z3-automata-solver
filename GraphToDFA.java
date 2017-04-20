@@ -8,7 +8,7 @@ class GraphToDFA
     System.out.println("\nDFA Example\n");
 
     String sat = "UNSATISFIABLE";
-    int n = 1;
+    int numStates = 1;
     
     // go in a loop and find the min number of states which are satisfiable
     while (sat.equals("UNSATISFIABLE")) {
@@ -31,33 +31,33 @@ class GraphToDFA
 	    };
 	
 	    // Final states in DFA
-	    BoolExpr[] finalStates = new BoolExpr[n];
-	    for (int i = 0; i < n; i++) {
+	    BoolExpr[] finalStates = new BoolExpr[numStates];
+	    for (int i = 0; i < numStates; i++) {
 	    	finalStates[i] = ctx.mkBoolConst("f"+i+"");
 	    }
 	
 	    //match up with accepting NFA
-	    BoolExpr[][] aNFA = new BoolExpr[n][aSz];
-	    for (int i = 0; i < n; i++) {
+	    BoolExpr[][] aNFA = new BoolExpr[numStates][aSz];
+	    for (int i = 0; i < numStates; i++) {
 	      for (int j = 0; j < aSz; j++) {
-	      	 aNFA[i][j] = ctx.mkBoolConst("x"+i+""+j+"p");
+	      	 aNFA[i][j] = ctx.mkBoolConst("x"+i+""+j);
 	      }
 	    }
 	
 	    //match up with rejecting NFA
-	    BoolExpr[][] rNFA = new BoolExpr[n][rSz];
-	    for (int i = 0; i < n; i++) {
+	    BoolExpr[][] rNFA = new BoolExpr[numStates][rSz];
+	    for (int i = 0; i < numStates; i++) {
 	      for (int j = 0; j < rSz; j++) {
-	      	 rNFA[i][j] = ctx.mkBoolConst("y"+i+""+j+"pp");
+	      	 rNFA[i][j] = ctx.mkBoolConst("y"+i+""+j);
 	      }
 	    }
 	
 	    // transitions in DFA
-	    BoolExpr[][][] trans = new BoolExpr[n][alphabet.length][n];
+	    BoolExpr[][][] trans = new BoolExpr[numStates][alphabet.length][numStates];
 	    
-	    for (int i = 0; i < n; i++) {
+	    for (int i = 0; i < numStates; i++) {
 	    	 for (int j = 0; j < alphabet.length; j++) { 
-	         	for (int k = 0; k < n; k++) {
+	         	for (int k = 0; k < numStates; k++) {
 	            	trans[i][j][k] = ctx.mkBoolConst("d"+i+""+alphabet[j]+""+k+"");
 	            }
 	         }
@@ -65,9 +65,9 @@ class GraphToDFA
 	
 	    // assert DFA not NFA
 	    for (int j = 0; j < alphabet.length; j++) {
-	    	for (int i = 0; i < n; i++) {
+	    	for (int i = 0; i < numStates; i++) {
 	    		BoolExpr bexp = ctx.mkBool(false);
-	    		for (int k = 0; k < n; k++) {
+	    		for (int k = 0; k < numStates; k++) {
 	    			bexp = ctx.mkOr(ctx.mkNot(trans[i][j][k]), bexp);
 	    		} 	
 	    		opt.Assert(bexp);
@@ -76,9 +76,9 @@ class GraphToDFA
 	
 	    // assert DFA's transition function is total (i.e. complete DFA)
 	    for (int j = 0; j < alphabet.length; j++) {
-	    	for (int i = 0; i < n; i++) {
+	    	for (int i = 0; i < numStates; i++) {
 	    		BoolExpr bexp = ctx.mkBool(false);
-	    		for (int k = 0; k < n; k++) {
+	    		for (int k = 0; k < numStates; k++) {
 	    			bexp = ctx.mkOr(trans[i][j][k], bexp);
 	    		} 	
 	    		opt.Assert(bexp);
@@ -90,9 +90,9 @@ class GraphToDFA
 	    opt.Assert(rNFA[0][0]);
 	
 	    // assert transitions from accepting NFA
-	    for (int i = 0; i < n; i++) {
+	    for (int i = 0; i < numStates; i++) {
 	    	for (int j = 0; j < aSz; j++) {
-	        	for (int k = 0; k < n; k++) {
+	        	for (int k = 0; k < numStates; k++) {
 	            	for (int l = 0; l < aSz; l++) {
 	                	if (acceptingTransitions[j][l] >= 0) {
 	                		opt.Assert(ctx.mkImplies(ctx.mkAnd(aNFA[i][j], trans[i][ acceptingTransitions[j][l] ][k]), aNFA[k][l]));
@@ -103,9 +103,9 @@ class GraphToDFA
 	    }
 	
 	    // assert transitions from rejecting NFA
-	    for (int i = 0; i < n; i++) {
+	    for (int i = 0; i < numStates; i++) {
 	    	for (int j = 0; j < rSz; j++) {
-	        	for (int k = 0; k < n; k++) {
+	        	for (int k = 0; k < numStates; k++) {
 	            	for (int l = 0; l < rSz; l++) {
 	                	if (rejectingTransitions[j][l] >= 0) {
 	                    	opt.Assert(ctx.mkImplies(ctx.mkAnd(rNFA[i][j], trans[i][ rejectingTransitions[j][l] ][k]), rNFA[k][l]));
@@ -116,13 +116,13 @@ class GraphToDFA
 	    }
 	
 	    // add final-state constraints
-	    for (int i = 0; i < n; i++) {
+	    for (int i = 0; i < numStates; i++) {
 	        for (int j = 0; j < acceptingFinalStates.length; j++) {
 	              opt.Assert(ctx.mkImplies(aNFA[i][ acceptingFinalStates[j]], finalStates[i]));       	 
 	        }
 	      }
 	    
-	    for (int i = 0; i < n; i++) {
+	    for (int i = 0; i < numStates; i++) {
 	    	for (int j = 0; j < rejectingFinalStates.length; j++) {
 	        	opt.Assert(ctx.mkImplies(rNFA[i][rejectingFinalStates[j]], ctx.mkNot(finalStates[i])));
 	        }
@@ -131,11 +131,11 @@ class GraphToDFA
 	    // satisfiable or unsatisfiable
 	    sat = opt.Check().toString();
 		if (sat.equals("SATISFIABLE")) {
-		    System.out.println(sat + " with " + n + " states"); 
+		    System.out.println(sat + " with " + numStates + " states"); 
 		    System.out.println(opt.getModel());
 		    System.out.println("\n--------------------------------------------------\n");
 		}
-	    n++;
+		numStates++;
     }
   }
 
