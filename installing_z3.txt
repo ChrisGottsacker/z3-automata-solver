@@ -42,3 +42,6 @@ Build & Run your code:
 
 	run:
 		java path/to/yourcode.java
+
+Bugs:
+	Exception in thread "main" java.lang.UnsatisfiedLinkError: no libz3java in java.library.path
