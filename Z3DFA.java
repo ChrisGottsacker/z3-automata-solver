@@ -12,11 +12,11 @@ class Z3DFA
 
 		Context ctx = getContext();
 
-		String sat = "UNSATISFIABLE";
+		Status sat = Status.UNSATISFIABLE;
 		int numStates = 1;
 
 		// go in a loop and find the min number of states which are satisfiable
-		while (sat.equals("UNSATISFIABLE")) {
+		while (sat == Status.UNSATISFIABLE) {
 			Optimize opt = ctx.mkOptimize();
 
 			int rSz = rejectingTransitions.length;
@@ -95,8 +95,8 @@ class Z3DFA
 			}
 
 			// satisfiable or unsatisfiable
-			sat = opt.Check().toString();
-			if (sat.equals("SATISFIABLE")) {
+			sat = opt.Check();
+			if (sat == Status.SATISFIABLE) {
 				printModel(opt, trans, finalStates, numStates, alphabet);
 			}
 			numStates++;
@@ -234,9 +234,9 @@ class Z3DFA
 
 		int numStates = 1;
 		boolean found = false;
-		String sat = "UNSATISFIABLE";
+		Status sat = Status.UNSATISFIABLE;
 
-		while (numStates <= acceptingTransitions.length && sat.equals("UNSATISFIABLE")) {
+		while (numStates <= acceptingTransitions.length && sat == Status.UNSATISFIABLE) {
 			// Final states in DFA
 			Optimize opt = ctx.mkOptimize();
 			BoolExpr[] finalStates = new BoolExpr[numStates];
@@ -297,8 +297,8 @@ class Z3DFA
 				}
 			}
 
-			sat = opt.Check().toString();
-			if (sat.equals("SATISFIABLE")) {
+			sat = opt.Check();
+			if (sat == Status.SATISFIABLE) {
 				found = true;
 				printModel(opt, trans, finalStates, numStates, alphabet);
 			}
@@ -308,9 +308,9 @@ class Z3DFA
 
 		if (!found) {
 			System.out.println("No smaller DFA found!");
+			System.out.println("\n--------------------------------------------------\n");
 		}
 
-		System.out.println("\n--------------------------------------------------\n");
 	}
 
 
