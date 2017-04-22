@@ -86,6 +86,10 @@ class Z3DFA
 
 	}
 
+	private void getClosestCorrectDFA(Character[] alphabet, int[] acceptingFinalStates, int[][][] acceptingTransitions)
+	{
+
+	}
 
 	private Context getNewContext()
 	{
@@ -101,7 +105,7 @@ class Z3DFA
 	{
 		BoolExpr[] finalStates = new BoolExpr[numStates];
 		for (int i = 0; i < numStates; i++) {
-			finalStates[i] = ctx.mkBoolConst("f"+i+"");
+			finalStates[i] = ctx.mkBoolConst("f("+i+")");
 		}
 
 		BoolExpr[][][] transitions = new BoolExpr[numStates][alphabet.length][numStates];
@@ -109,7 +113,7 @@ class Z3DFA
 		for (int i = 0; i < numStates; i++) {
 			for (int j = 0; j < alphabet.length; j++) {
 				for (int k = 0; k < numStates; k++) {
-					transitions[i][j][k] = ctx.mkBoolConst("d"+i+""+alphabet[j]+""+k+"");
+					transitions[i][j][k] = ctx.mkBoolConst("d("+i+","+alphabet[j]+")="+k+"");
 				}
 			}
 		}
@@ -147,7 +151,7 @@ class Z3DFA
 		BoolExpr[][] rNFA = new BoolExpr[numStates][rSz];
 		for (int i = 0; i < numStates; i++) {
 			for (int j = 0; j < rSz; j++) {
-				rNFA[i][j] = ctx.mkBoolConst("y"+i+""+j);
+				rNFA[i][j] = ctx.mkBoolConst("y("+i+","+j+")");
 			}
 		}
 
@@ -184,7 +188,7 @@ class Z3DFA
 		BoolExpr[][] aNFA = new BoolExpr[numStates][aSz];
 		for (int i = 0; i < numStates; i++) {
 			for (int j = 0; j < aSz; j++) {
-				aNFA[i][j] = ctx.mkBoolConst("x"+i+""+j);
+				aNFA[i][j] = ctx.mkBoolConst("x("+i+","+j+")");
 			}
 		}
 
@@ -365,6 +369,7 @@ class Z3DFA
 
 class Z3Automata {
 	BoolExpr[] finalStates;
+	// BoolExpr[state s][transition a][state d(s,a)]
 	BoolExpr[][][] transitions;
 	Character[] alphabet;
 	int numStates;
