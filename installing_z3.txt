@@ -41,7 +41,8 @@ Build & Run your code:
 		javac -cp path/to/z3/build/com.microsoft.z3.jar path/to/yourcode.java
 
 	run:
-		java path/to/yourcode.java
+		LD_LIBRARY_PATH=path/to/z3/build/  java -cp path/to/z3/build/com.microsoft.z3.jar:path/to/z3/build/ path/to/yourcode.java
+
 
 Bugs:
 	Exception in thread "main" java.lang.UnsatisfiedLinkError: no libz3java in java.library.path
