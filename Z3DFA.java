@@ -5,7 +5,7 @@ import com.microsoft.z3.*;
 class Z3DFA
 {
 	/* ########################### PART ONE ########################### */
-	private void GetMinSepDFA(Character[] alphabet, int[] acceptingFinalStates, int[][] acceptingTransitions, int[] rejectingFinalStates, int[][] rejectingTransitions)
+	private void GetMinSepDFA(Character[] alphabet, int[] acceptingFinalStates, int[][][] acceptingTransitions, int[] rejectingFinalStates, int[][] rejectingTransitions)
 	{
 		System.out.println("--------------------------------------------------");
 		System.out.println("\nDFA Part 1: Get Output DFA from accepting and rejecting DFAs\n");
@@ -132,7 +132,7 @@ class Z3DFA
 	//
 	//	}
 
-	private BoolExpr[][] addAcceptingAssertions(Context ctx, Optimize opt, int numStates, int[][] acceptingTransitions,
+	private BoolExpr[][] addAcceptingAssertions(Context ctx, Optimize opt, int numStates, int[][][] acceptingTransitions,
 			int[] acceptingFinalStates, BoolExpr[][][] trans, BoolExpr[] finalStates){
 		int aSz = acceptingTransitions.length;
 		//match up with accepting NFA
@@ -151,8 +151,9 @@ class Z3DFA
 			for (int j = 0; j < aSz; j++) {
 				for (int k = 0; k < numStates; k++) {
 					for (int l = 0; l < aSz; l++) {
-						if (acceptingTransitions[j][l] >= 0) {
-							opt.Assert(ctx.mkImplies(ctx.mkAnd(aNFA[i][j], trans[i][ acceptingTransitions[j][l] ][k]), aNFA[k][l]));
+						for (int m = 0; m < acceptingTransitions[j][l].length; m++){
+							opt.Assert(ctx.mkImplies(ctx.mkAnd(aNFA[i][j], trans[i][ acceptingTransitions[j][l][m] ][k]), aNFA[k][l]));
+
 						}
 					}
 				}
@@ -227,7 +228,7 @@ class Z3DFA
 	}
 
 	/* ########################### PART TWO ########################### */
-	private void GetMinEquivalentDFA(Character[] alphabet, int[] acceptingFinalStates, int[][] acceptingTransitions) {
+	private void GetMinEquivalentDFA(Character[] alphabet, int[] acceptingFinalStates, int[][][] acceptingTransitions) {
 		System.out.println("DFA Part 2: Get equivalent DFA of a smaller size\n");
 
 		Context ctx = getContext();
@@ -363,9 +364,9 @@ class Z3DFA
 
 				int[] acceptingFinalStates3 = {0};
 				// -1 if no transitions from that state, 0 for 'a' transition, 1 for 'b' transition
-				int[][] acceptingTransitions3 = {
-						{-1, 0},
-						{0, -1}
+				int[][][] acceptingTransitions3 = {
+						{{}, {0}},
+						{{0}, {}}
 				};
 				p.GetMinEquivalentDFA(alphabet, acceptingFinalStates3, acceptingTransitions3);
 			}
