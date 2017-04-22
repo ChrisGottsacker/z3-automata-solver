@@ -105,8 +105,8 @@ class Z3DFA
 
 	private Context getContext()
 	{
-		// This example needs both the model and proof generation turned on
 		HashMap<String, String> cfg = new HashMap<String, String>();
+		// Turn on model generation
 		cfg.put("model", "true");
 		// cfg.put("proof", "true");
 		return new Context(cfg);
@@ -123,7 +123,7 @@ class Z3DFA
 		PrintFinalStates(finalStateAssignments, numStates);
 
 		// Uncomment to print the model
-		// System.out.println(model);
+		System.out.println(model);
 
 		System.out.println("\n--------------------------------------------------\n");
 	}
@@ -335,7 +335,7 @@ class Z3DFA
 				int[] acceptingFinalStates = {0};
 				// -1 if no transitions from that state, 0 for 'a' transition, 1 for 'b' transition
 				int[][] acceptingTransitions = {
-						{-1, 0},
+						// {-1, 0},
 						{0, -1}
 				};
 
@@ -347,7 +347,7 @@ class Z3DFA
 				};
 
 				// Part One
-				p.GetMinSepDFA(alphabet, acceptingFinalStates, acceptingTransitions, rejectingFinalStates, rejectingTransitions);
+				// p.GetMinSepDFA(alphabet, acceptingFinalStates, acceptingTransitions, rejectingFinalStates, rejectingTransitions);
 
 				// Part Two
 
@@ -359,7 +359,15 @@ class Z3DFA
 					{-1, 1, 0}
 				};
 
-				p.GetMinEquivalentDFA(alphabet, acceptingFinalStates2, acceptingTransitions2);
+				// p.GetMinEquivalentDFA(alphabet, acceptingFinalStates2, acceptingTransitions2);
+
+				int[] acceptingFinalStates3 = {0};
+				// -1 if no transitions from that state, 0 for 'a' transition, 1 for 'b' transition
+				int[][] acceptingTransitions3 = {
+						{-1, 0},
+						{0, -1}
+				};
+				p.GetMinEquivalentDFA(alphabet, acceptingFinalStates3, acceptingTransitions3);
 			}
 			Log.close();
 			if (Log.isOpen())

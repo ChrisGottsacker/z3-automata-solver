@@ -38,10 +38,10 @@ Build & Run example:
 
 Build & Run your code:
 	build:
-		javac -cp path/to/z3/build/com.microsoft.z3.jar path/to/yourcode.java
+		javac -cp path/to/z3/build/com.microsoft.z3.jar path/to/yourprog.java
 
 	run:
-		LD_LIBRARY_PATH=path/to/z3/build/  java -cp path/to/z3/build/com.microsoft.z3.jar:path/to/z3/build/ path/to/yourcode.java
+		LD_LIBRARY_PATH=path/to/z3/build/  java -cp path/to/z3/build/com.microsoft.z3.jar:path/to/yourprog.class path/to/yourprog.java
 
 
 Bugs:
