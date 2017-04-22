@@ -5,7 +5,7 @@ import com.microsoft.z3.*;
 class Z3DFA
 {
 	/* ########################### PART ONE ########################### */
-	private void GetMinSepDFA(Character[] alphabet, int[] acceptingFinalStates, int[][][] acceptingTransitions, int[] rejectingFinalStates, int[][] rejectingTransitions)
+	private void GetMinSepDFA(Character[] alphabet, int[] acceptingFinalStates, int[][][] acceptingTransitions, int[] rejectingFinalStates, int[][][] rejectingTransitions)
 	{
 		System.out.println("--------------------------------------------------");
 		System.out.println("\nDFA Part 1: Get Output DFA from accepting and rejecting DFAs\n");
@@ -79,8 +79,8 @@ class Z3DFA
 				for (int j = 0; j < rSz; j++) {
 					for (int k = 0; k < numStates; k++) {
 						for (int l = 0; l < rSz; l++) {
-							if (rejectingTransitions[j][l] >= 0) {
-								opt.Assert(ctx.mkImplies(ctx.mkAnd(rNFA[i][j], trans[i][ rejectingTransitions[j][l] ][k]), rNFA[k][l]));
+							for (int m = 0; m < rejectingTransitions[j][l].length; m++){
+								opt.Assert(ctx.mkImplies(ctx.mkAnd(rNFA[i][j], trans[i][ rejectingTransitions[j][l][m] ][k]), rNFA[k][l]));
 							}
 						}
 					}
@@ -335,40 +335,40 @@ class Z3DFA
 				Character alphabet[] = {'a', 'b'};
 				int[] acceptingFinalStates = {0};
 				// -1 if no transitions from that state, 0 for 'a' transition, 1 for 'b' transition
-				int[][] acceptingTransitions = {
+				int[][][] acceptingTransitions = {
 						// {-1, 0},
-						{0, -1}
+						{{0}, {}}
 				};
 
 				int[] rejectingFinalStates = {1};
 				// -1 if no transitions from that state, 0 for 'a' transition, 1 for 'b' transition
-				int[][] rejectingTransitions = {
-						{-1, 1},
-						{-1, 1}
+				int[][][] rejectingTransitions = {
+						{{}, {1}},
+						{{}, {1}}
 				};
 
 				// Part One
-				// p.GetMinSepDFA(alphabet, acceptingFinalStates, acceptingTransitions, rejectingFinalStates, rejectingTransitions);
+				p.GetMinSepDFA(alphabet, acceptingFinalStates, acceptingTransitions, rejectingFinalStates, rejectingTransitions);
 
 				// Part Two
 
 				int[] acceptingFinalStates2 = {0, 2};
 				// -1 if no transitions from that state, 0 for 'a' transition, 1 for 'b' transition
-				int[][] acceptingTransitions2 = {
-					{-1, 1, 0},
-					{-1, 1, 0},
-					{-1, 1, 0}
+				int[][][] acceptingTransitions2 = {
+					{{}, {1}, {0}},
+					{{}, {1}, {0}},
+					{{}, {1}, {0}}
 				};
 
-				// p.GetMinEquivalentDFA(alphabet, acceptingFinalStates2, acceptingTransitions2);
+				p.GetMinEquivalentDFA(alphabet, acceptingFinalStates2, acceptingTransitions2);
 
 				int[] acceptingFinalStates3 = {0};
 				// -1 if no transitions from that state, 0 for 'a' transition, 1 for 'b' transition
 				int[][][] acceptingTransitions3 = {
-						{{}, {0}},
+						{{}, {0,1}},
 						{{0}, {}}
 				};
-				p.GetMinEquivalentDFA(alphabet, acceptingFinalStates3, acceptingTransitions3);
+				// p.GetMinEquivalentDFA(alphabet, acceptingFinalStates3, acceptingTransitions3);
 			}
 			Log.close();
 			if (Log.isOpen())
