@@ -3,12 +3,14 @@ import java.util.*;
 import com.microsoft.z3.*;
 
 class Z3DFA
-{  
+{
 	/* ########################### PART ONE ########################### */
-	private void GetMinSepDFA(Context ctx, Character[] alphabet, int[] acceptingFinalStates, int[][] acceptingTransitions, int[] rejectingFinalStates, int[][] rejectingTransitions) 
+	private void GetMinSepDFA(Character[] alphabet, int[] acceptingFinalStates, int[][] acceptingTransitions, int[] rejectingFinalStates, int[][] rejectingTransitions)
 	{
 		System.out.println("--------------------------------------------------");
 		System.out.println("\nDFA Part 1: Get Output DFA from accepting and rejecting DFAs\n");
+
+		Context ctx = getContext();
 
 		String sat = "UNSATISFIABLE";
 		int numStates = 1;
@@ -37,7 +39,7 @@ class Z3DFA
 			BoolExpr[][][] trans = new BoolExpr[numStates][alphabet.length][numStates];
 
 			for (int i = 0; i < numStates; i++) {
-				for (int j = 0; j < alphabet.length; j++) { 
+				for (int j = 0; j < alphabet.length; j++) {
 					for (int k = 0; k < numStates; k++) {
 						trans[i][j][k] = ctx.mkBoolConst("d"+i+""+alphabet[j]+""+k+"");
 					}
@@ -53,7 +55,7 @@ class Z3DFA
 					BoolExpr bexp = ctx.mkBool(false);
 					for (int k = 0; k < numStates; k++) {
 						bexp = ctx.mkOr(ctx.mkNot(trans[i][j][k]), bexp);
-					} 	
+					}
 					opt.Assert(bexp);
 				}
 			}
@@ -64,7 +66,7 @@ class Z3DFA
 					BoolExpr bexp = ctx.mkBool(false);
 					for (int k = 0; k < numStates; k++) {
 						bexp = ctx.mkOr(trans[i][j][k], bexp);
-					} 	
+					}
 					opt.Assert(bexp);
 				}
 			}
@@ -95,30 +97,44 @@ class Z3DFA
 			// satisfiable or unsatisfiable
 			sat = opt.Check().toString();
 			if (sat.equals("SATISFIABLE")) {
-				System.out.println(sat + " with " + numStates + " states"); 
-				Model model = opt.getModel();
-				BoolExpr[][][] transAssignments = TransitionsAssignments(model, trans, numStates, alphabet.length);
-				BoolExpr[] finalStateAssignments = FinalStateAssignments(model, finalStates, numStates);
-
-				PrintTransitions(transAssignments, numStates, alphabet);
-				PrintFinalStates(finalStateAssignments, numStates);		    
-
-				// Uncomment to print the model
-				// System.out.println(model);
-
-				System.out.println("\n--------------------------------------------------\n");
+				printModel(opt, trans, finalStates, numStates, alphabet);
 			}
 			numStates++;
 		}
 	}
 
+	private Context getContext()
+	{
+		// This example needs both the model and proof generation turned on
+		HashMap<String, String> cfg = new HashMap<String, String>();
+		cfg.put("model", "true");
+		// cfg.put("proof", "true");
+		return new Context(cfg);
+	}
+
+	private void printModel(Optimize opt, BoolExpr[][][] trans, BoolExpr[] finalStates, int numStates, Character[] alphabet)
+	{
+		System.out.println("SATISFIABLE with " + numStates + " states");
+		Model model = opt.getModel();
+		BoolExpr[][][] transAssignments = TransitionsAssignments(model, trans, numStates, alphabet.length);
+		BoolExpr[] finalStateAssignments = FinalStateAssignments(model, finalStates, numStates);
+
+		PrintTransitions(transAssignments, numStates, alphabet);
+		PrintFinalStates(finalStateAssignments, numStates);
+
+		// Uncomment to print the model
+		// System.out.println(model);
+
+		System.out.println("\n--------------------------------------------------\n");
+	}
+
 	//	private void addResultDFAassertions(Context ctx, Optimize opt, int numStates) {
-	//		
+	//
 	//	}
 
-	private BoolExpr[][] addAcceptingAssertions(Context ctx, Optimize opt, int numStates, int[][] acceptingTransitions, 
+	private BoolExpr[][] addAcceptingAssertions(Context ctx, Optimize opt, int numStates, int[][] acceptingTransitions,
 			int[] acceptingFinalStates, BoolExpr[][][] trans, BoolExpr[] finalStates){
-		int aSz = acceptingTransitions.length; 
+		int aSz = acceptingTransitions.length;
 		//match up with accepting NFA
 		BoolExpr[][] aNFA = new BoolExpr[numStates][aSz];
 		for (int i = 0; i < numStates; i++) {
@@ -146,7 +162,7 @@ class Z3DFA
 		// add final-state constraints
 		for (int i = 0; i < numStates; i++) {
 			for (int j = 0; j < acceptingFinalStates.length; j++) {
-				opt.Assert(ctx.mkImplies(aNFA[i][ acceptingFinalStates[j]], finalStates[i]));       	 
+				opt.Assert(ctx.mkImplies(aNFA[i][ acceptingFinalStates[j]], finalStates[i]));
 			}
 		}
 
@@ -154,7 +170,7 @@ class Z3DFA
 	}
 
 	// returns an array with values showing which transitions are included in the output
-	private BoolExpr[][][] TransitionsAssignments(Model model, BoolExpr[][][] trans, int numStates, int alphaLen) 
+	private BoolExpr[][][] TransitionsAssignments(Model model, BoolExpr[][][] trans, int numStates, int alphaLen)
 	{
 
 		BoolExpr[][][] transAssignments = new BoolExpr[numStates][alphaLen][numStates];
@@ -171,7 +187,7 @@ class Z3DFA
 	}
 
 	// returns an array with values showing which final states are included in the output
-	private BoolExpr[] FinalStateAssignments(Model model, BoolExpr[] finalStates, int numStates) 
+	private BoolExpr[] FinalStateAssignments(Model model, BoolExpr[] finalStates, int numStates)
 	{
 		BoolExpr[] finalStateAssignments = new BoolExpr[numStates];
 
@@ -185,7 +201,7 @@ class Z3DFA
 	/*
 	 * Prints all the final states in the output DFA
 	 */
-	private void PrintFinalStates(BoolExpr[] finalStateAssignments, int numStates) 
+	private void PrintFinalStates(BoolExpr[] finalStateAssignments, int numStates)
 	{
 		System.out.println("\nOutput DFA Final States: ");
 		for (int i = 0; i < numStates; i++) {
@@ -196,7 +212,7 @@ class Z3DFA
 	/*
 	 * Prints all the transitions in the output DFA
 	 */
-	private void PrintTransitions(BoolExpr[][][] transAssignments, int numStates, Character[] alphabet) 
+	private void PrintTransitions(BoolExpr[][][] transAssignments, int numStates, Character[] alphabet)
 	{
 		System.out.println("\nOutput DFA Transitions: \n");
 		System.out.println("From    Transition On    To    Value");
@@ -211,8 +227,10 @@ class Z3DFA
 	}
 
 	/* ########################### PART TWO ########################### */
-	private void GetMinEquivalentDFA(Context ctx, Character[] alphabet, int[] acceptingFinalStates, int[][] acceptingTransitions) {
+	private void GetMinEquivalentDFA(Character[] alphabet, int[] acceptingFinalStates, int[][] acceptingTransitions) {
 		System.out.println("DFA Part 2: Get equivalent DFA of a smaller size\n");
+
+		Context ctx = getContext();
 
 		int numStates = 1;
 		boolean found = false;
@@ -230,7 +248,7 @@ class Z3DFA
 			BoolExpr[][][] trans = new BoolExpr[numStates][alphabet.length][numStates];
 
 			for (int i = 0; i < numStates; i++) {
-				for (int j = 0; j < alphabet.length; j++) { 
+				for (int j = 0; j < alphabet.length; j++) {
 					for (int k = 0; k < numStates; k++) {
 						trans[i][j][k] = ctx.mkBoolConst("d"+i+""+alphabet[j]+""+k+"");
 					}
@@ -246,7 +264,7 @@ class Z3DFA
 					BoolExpr bexp = ctx.mkBool(false);
 					for (int k = 0; k < numStates; k++) {
 						bexp = ctx.mkOr(ctx.mkNot(trans[i][j][k]), bexp);
-					} 	
+					}
 					opt.Assert(bexp);
 				}
 			}
@@ -257,11 +275,11 @@ class Z3DFA
 					BoolExpr bexp = ctx.mkBool(false);
 					for (int k = 0; k < numStates; k++) {
 						bexp = ctx.mkOr(trans[i][j][k], bexp);
-					} 	
+					}
 					opt.Assert(bexp);
 				}
 			}
-			
+
 			for (int i = 0; i < aNFA.length; i++) {
 				for (int j = 0; j < aNFA[i].length; j++) {
 					boolean isFinal = false;
@@ -282,18 +300,9 @@ class Z3DFA
 			sat = opt.Check().toString();
 			if (sat.equals("SATISFIABLE")) {
 				found = true;
-				System.out.println(sat + " with " + numStates + " states"); 
-				Model model = opt.getModel();
-				BoolExpr[][][] transAssignments = TransitionsAssignments(model, trans, numStates, alphabet.length);
-				BoolExpr[] finalStateAssignments = FinalStateAssignments(model, finalStates, numStates);
-		
-				// Uncomment to see model
-				//System.out.println(model);
-				
-				PrintTransitions(transAssignments, numStates, alphabet);
-				PrintFinalStates(finalStateAssignments, numStates);    
+				printModel(opt, trans, finalStates, numStates, alphabet);
 			}
-			
+
 			numStates++;
 		}
 
@@ -317,16 +326,10 @@ class Z3DFA
 			System.out.println(Version.getMajor());
 			System.out.print("Z3 Full Version: ");
 			System.out.println(Version.getString());
-			System.out.print("Z3 Full Version String: ");
-			System.out.println(Version.getFullVersion());
+			// System.out.print("Z3 Full Version String: ");
+			// System.out.println(Version.getFullVersion());
 
 			{
-				// This example needs both the model and proof generation turned on
-				HashMap<String, String> cfg = new HashMap<String, String>();
-				cfg.put("model", "true");
-				cfg.put("proof", "true");
-				Context ctx = new Context(cfg);
-
 				// setting up the input DFAs
 				Character alphabet[] = {'a', 'b'};
 				int[] acceptingFinalStates = {0};
@@ -344,10 +347,10 @@ class Z3DFA
 				};
 
 				// Part One
-				p.GetMinSepDFA(ctx, alphabet, acceptingFinalStates, acceptingTransitions, rejectingFinalStates, rejectingTransitions);
-				
+				p.GetMinSepDFA(alphabet, acceptingFinalStates, acceptingTransitions, rejectingFinalStates, rejectingTransitions);
+
 				// Part Two
-				
+
 				int[] acceptingFinalStates2 = {0, 2};
 				// -1 if no transitions from that state, 0 for 'a' transition, 1 for 'b' transition
 				int[][] acceptingTransitions2 = {
@@ -355,8 +358,8 @@ class Z3DFA
 					{-1, 1, 0},
 					{-1, 1, 0}
 				};
-		
-				p.GetMinEquivalentDFA(ctx, alphabet, acceptingFinalStates2, acceptingTransitions2);
+
+				p.GetMinEquivalentDFA(alphabet, acceptingFinalStates2, acceptingTransitions2);
 			}
 			Log.close();
 			if (Log.isOpen())
@@ -374,3 +377,4 @@ class Z3DFA
 		}
 	}
 }
+//
