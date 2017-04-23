@@ -21,9 +21,9 @@ class Z3DFA
 
 			Z3Automata minSepDFA = addTargetDFAassertions(ctx, opt, numStates, alphabet);
 
-			addAcceptingAssertions(ctx, opt, numStates, acceptingTransitions, acceptingFinalStates, minSepDFA);
+			addAcceptingAssertions(AssertMode.HARD, ctx, opt, numStates, acceptingTransitions, acceptingFinalStates, minSepDFA, "X");
 
-			addRejectingAssertions(ctx, opt, numStates, rejectingTransitions, rejectingFinalStates, minSepDFA);
+			addRejectingAssertions(ctx, opt, numStates, rejectingTransitions, rejectingFinalStates, minSepDFA, "Y");
 
 			// satisfiable or unsatisfiable
 			sat = opt.Check();
@@ -50,25 +50,9 @@ class Z3DFA
 
 			Z3Automata minEquivDFA = addTargetDFAassertions(ctx, opt, numStates, alphabet);
 
-			BoolExpr[][] aNFA = addAcceptingAssertions(ctx, opt, numStates, acceptingTransitions, acceptingFinalStates, minEquivDFA);
+			BoolExpr[][] aNFA = addAcceptingAssertions(AssertMode.HARD, ctx, opt, numStates, acceptingTransitions, acceptingFinalStates, minEquivDFA, "X");
 
-
-			for (int i = 0; i < aNFA.length; i++) {
-				for (int j = 0; j < aNFA[i].length; j++) {
-					boolean isFinal = false;
-					for (int a = 0; a < acceptingFinalStates.length; a++) {
-						if(j == acceptingFinalStates[a]) {
-							isFinal = true;
-						}
-					}
-					if(isFinal) {
-						opt.Assert(ctx.mkImplies(ctx.mkNot(minEquivDFA.finalStates[i]), ctx.mkNot(aNFA[i][j])));
-					}
-					else {
-						opt.Assert(ctx.mkImplies(minEquivDFA.finalStates[i], ctx.mkNot(aNFA[i][j])));
-					}
-				}
-			}
+			addEquivalenceAssertions(ctx, opt, aNFA, acceptingFinalStates, minEquivDFA);
 
 			sat = opt.Check();
 			if (sat == Status.SATISFIABLE) {
@@ -86,9 +70,27 @@ class Z3DFA
 
 	}
 
-	private void getClosestCorrectDFA(Character[] alphabet, int[] acceptingFinalStates, int[][][] acceptingTransitions)
+	private void getClosestEquivalentDFA(Character[] alphabet, int[] canonicalFinalStates, int[][][] canonicalTransitions, int[] providedFinalStates, int[][][] providedTransitions)
 	{
+		int numStates = Math.max(canonicalTransitions.length, providedTransitions.length);
 
+		Context ctx = getNewContext();
+		Optimize opt = ctx.mkOptimize();
+		Z3Automata closestEquivalentDFA = addTargetDFAassertions(ctx, opt, numStates, alphabet);
+
+		BoolExpr[][] aNFA = addAcceptingAssertions(AssertMode.HARD, ctx, opt, numStates, canonicalTransitions, canonicalFinalStates, closestEquivalentDFA, "X");
+
+		addAcceptingAssertions(AssertMode.SOFT, ctx, opt, numStates, providedTransitions, providedFinalStates, closestEquivalentDFA, "Y");
+
+		addEquivalenceAssertions(ctx, opt, aNFA, canonicalFinalStates, closestEquivalentDFA);
+
+		Status sat = opt.Check();
+		if (sat == Status.SATISFIABLE) {
+			printModel(opt, closestEquivalentDFA);
+		}
+		else {
+			System.out.println("Failed to generate similar, but correct, automata");
+		}
 	}
 
 	private Context getNewContext()
@@ -144,14 +146,14 @@ class Z3DFA
 	}
 
 
-	private BoolExpr[][] addRejectingAssertions(Context ctx, Optimize opt, int numStates, int[][][] rejectingTransitions, int[] rejectingFinalStates, Z3Automata targetDFA){
+	private BoolExpr[][] addRejectingAssertions(Context ctx, Optimize opt, int numStates, int[][][] rejectingTransitions, int[] rejectingFinalStates, Z3Automata targetDFA, String relationName){
 		int rSz = rejectingTransitions.length;
 
 		//match up with rejecting NFA
 		BoolExpr[][] rNFA = new BoolExpr[numStates][rSz];
 		for (int i = 0; i < numStates; i++) {
 			for (int j = 0; j < rSz; j++) {
-				rNFA[i][j] = ctx.mkBoolConst("y("+i+","+j+")");
+				rNFA[i][j] = ctx.mkBoolConst(relationName + "("+i+","+j+")");
 			}
 		}
 
@@ -181,14 +183,17 @@ class Z3DFA
 		return rNFA;
 	}
 
-	private BoolExpr[][] addAcceptingAssertions(Context ctx, Optimize opt, int numStates, int[][][] acceptingTransitions,
-			int[] acceptingFinalStates, Z3Automata targetDFA){
+	private BoolExpr[][] addAcceptingAssertions(AssertMode mode, Context ctx, Optimize opt, int numStates, int[][][] acceptingTransitions,
+			int[] acceptingFinalStates, Z3Automata targetDFA, String relationName){
 		int aSz = acceptingTransitions.length;
+		int transitionWt = 1;
+		int finalStateWt = 1;
+
 		//match up with accepting NFA
 		BoolExpr[][] aNFA = new BoolExpr[numStates][aSz];
 		for (int i = 0; i < numStates; i++) {
 			for (int j = 0; j < aSz; j++) {
-				aNFA[i][j] = ctx.mkBoolConst("x("+i+","+j+")");
+				aNFA[i][j] = ctx.mkBoolConst(relationName + "("+i+","+j+")");
 			}
 		}
 
@@ -201,8 +206,14 @@ class Z3DFA
 				for (int k = 0; k < numStates; k++) {
 					for (int l = 0; l < aSz; l++) {
 						for (int m = 0; m < acceptingTransitions[j][l].length; m++){
-							opt.Assert(ctx.mkImplies(ctx.mkAnd(aNFA[i][j], targetDFA.transitions[i][ acceptingTransitions[j][l][m] ][k]), aNFA[k][l]));
-
+							switch(mode) {
+								case HARD:
+									opt.Assert(ctx.mkImplies(ctx.mkAnd(aNFA[i][j], targetDFA.transitions[i][ acceptingTransitions[j][l][m] ][k]), aNFA[k][l]));
+									break;
+								case SOFT:
+									opt.AssertSoft(ctx.mkImplies(ctx.mkAnd(aNFA[i][j], targetDFA.transitions[i][ acceptingTransitions[j][l][m] ][k]), aNFA[k][l]), transitionWt, relationName);
+									break;
+							}
 						}
 					}
 				}
@@ -212,12 +223,41 @@ class Z3DFA
 		// add final-state constraints
 		for (int i = 0; i < numStates; i++) {
 			for (int j = 0; j < acceptingFinalStates.length; j++) {
-				opt.Assert(ctx.mkImplies(aNFA[i][ acceptingFinalStates[j]], targetDFA.finalStates[i]));
+				switch(mode) {
+					case HARD:
+						opt.Assert(ctx.mkImplies(aNFA[i][ acceptingFinalStates[j]], targetDFA.finalStates[i]));
+						break;
+					case SOFT:
+						opt.AssertSoft(ctx.mkImplies(aNFA[i][ acceptingFinalStates[j]], targetDFA.finalStates[i]), finalStateWt, relationName);
+						break;
+				}
 			}
 		}
 
 		return aNFA;
 	}
+
+
+	private void addEquivalenceAssertions(Context ctx, Optimize opt, BoolExpr[][] aNFA, int[] acceptingFinalStates, Z3Automata minEquivDFA)
+	{
+		for (int i = 0; i < aNFA.length; i++) {
+			for (int j = 0; j < aNFA[i].length; j++) {
+				boolean isFinal = false;
+				for (int a = 0; a < acceptingFinalStates.length; a++) {
+					if(j == acceptingFinalStates[a]) {
+						isFinal = true;
+					}
+				}
+				if(isFinal) {
+					opt.Assert(ctx.mkImplies(ctx.mkNot(minEquivDFA.finalStates[i]), ctx.mkNot(aNFA[i][j])));
+				}
+				else {
+					opt.Assert(ctx.mkImplies(minEquivDFA.finalStates[i], ctx.mkNot(aNFA[i][j])));
+				}
+			}
+		}
+	}
+
 
 	// returns an array with values showing which transitions are included in the output
 	private BoolExpr[][][] getTransitionAssignments(Model model, BoolExpr[][][] trans, int numStates, int alphaLen)
@@ -329,7 +369,7 @@ class Z3DFA
 				};
 
 				// Part One
-				p.getMinSepDFA(alphabet, acceptingFinalStates, acceptingTransitions, rejectingFinalStates, rejectingTransitions);
+				// p.getMinSepDFA(alphabet, acceptingFinalStates, acceptingTransitions, rejectingFinalStates, rejectingTransitions);
 
 				// Part Two
 
@@ -340,15 +380,21 @@ class Z3DFA
 					{{}, {1}, {0}}
 				};
 
-				p.getMinEquivalentDFA(alphabet, acceptingFinalStates2, acceptingTransitions2);
+				// p.getMinEquivalentDFA(alphabet, acceptingFinalStates2, acceptingTransitions2);
 
-				int[] acceptingFinalStates3 = {0};
-				// -1 if no transitions from that state, 0 for 'a' transition, 1 for 'b' transition
-				int[][][] acceptingTransitions3 = {
-						{{}, {0,1}},
-						{{0}, {}}
+				int[] canonicalFinalStates = {0};
+				int[][][] canonicalTransitions = {
+					{{}, {0,1}},
+					{{0}, {}}
 				};
-				// p.getMinEquivalentDFA(alphabet, acceptingFinalStates3, acceptingTransitions3);
+
+				int[] proposedFinalStates = {0};
+				int[][][] proposedTransitions = {
+					{{}, {1}, {0}},
+					{{}, {1}, {0}},
+					{{}, {1}, {0}}
+				};
+				p.getClosestEquivalentDFA(alphabet, canonicalFinalStates, canonicalTransitions, proposedFinalStates, proposedTransitions);
 			}
 			Log.close();
 			if (Log.isOpen())
@@ -381,4 +427,8 @@ class Z3Automata {
 		this.alphabet = alphabet;
 		this.numStates = transitions.length;
 	}
+}
+
+enum AssertMode {
+	SOFT, HARD
 }
