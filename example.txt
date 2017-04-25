@@ -1,0 +1,56 @@
+<automaton>  <alphabet> <symbol>a</symbol> <symbol>b</symbol>  </alphabet>  <stateSet>    <state sid='0' ><label>0</label><posX>200</posX><posY>240</posY></state>    <state sid='1' ><label>1</label><posX>335</posX><posY>187</posY></state>    <state sid='2' ><label>2</label><posX>356</posX><posY>301</posY></state>    <state sid='3' ><label>3</label><posX>529</posX><posY>211</posY></state>  </stateSet>  <transitionSet>    <transition tid='0'>      <from>0</from>      <to>1</to>      <read>a</read>      <edgeDistance>30</edgeDistance>    </transition>    <transition tid='1'>      <from>0</from>      <to>2</to>      <read>b</read>      <edgeDistance>30</edgeDistance>    </transition>    <transition tid='2'>      <from>3</from>      <to>3</to>      <read>a</read>      <edgeDistance>30</edgeDistance>    </transition>    <transition tid='3'>      <from>3</from>      <to>3</to>      <read>b</read>      <edgeDistance>30</edgeDistance>    </transition>    <transition tid='4'>      <from>1</from>      <to>3</to>      <read>a</read>      <edgeDistance>30</edgeDistance>    </transition>    <transition tid='5'>      <from>1</from>      <to>3</to>      <read>b</read>      <edgeDistance>30</edgeDistance>    </transition>    <transition tid='6'>      <from>2</from>      <to>3</to>      <read>a</read>      <edgeDistance>30</edgeDistance>    </transition>    <transition tid='7'>      <from>2</from>      <to>3</to>      <read>b</read>      <edgeDistance>30</edgeDistance>    </transition>  </transitionSet>  <acceptingSet>    <state sid='0'/>    <state sid='3'/>  </acceptingSet><initState><state sid='0' /></initState></automaton>
+
+
+<automaton>
+  <alphabet>
+ <symbol>a</symbol>
+ <symbol>b</symbol>
+  </alphabet>
+  <stateSet>
+    <state sid='0' ><label>0</label><posX>200</posX><posY>240</posY></state>
+    <state sid='1' ><label>1</label><posX>320</posX><posY>241</posY></state>
+    <state sid='2' ><label>2</label><posX>430</posX><posY>243</posY></state>
+  </stateSet>
+  <transitionSet>
+    <transition tid='0'>
+      <from>0</from>
+      <to>1</to>
+      <read>a</read>
+      <edgeDistance>30</edgeDistance>
+    </transition>
+    <transition tid='1'>
+      <from>0</from>
+      <to>1</to>
+      <read>b</read>
+      <edgeDistance>30</edgeDistance>
+    </transition>
+    <transition tid='2'>
+      <from>2</from>
+      <to>2</to>
+      <read>a</read>
+      <edgeDistance>30</edgeDistance>
+    </transition>
+    <transition tid='3'>
+      <from>2</from>
+      <to>2</to>
+      <read>b</read>
+      <edgeDistance>30</edgeDistance>
+    </transition>
+    <transition tid='4'>
+      <from>1</from>
+      <to>2</to>
+      <read>a</read>
+      <edgeDistance>30</edgeDistance>
+    </transition>
+    <transition tid='5'>
+      <from>1</from>
+      <to>2</to>
+      <read>b</read>
+      <edgeDistance>30</edgeDistance>
+    </transition>
+  </transitionSet>
+  <acceptingSet>
+    <state sid='0'/>
+    <state sid='2'/>
+  </acceptingSet>
+<initState><state sid='0' /></initState></automaton>
