@@ -1,34 +1,32 @@
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Node;
-import org.w3c.dom.Element;
+import javax.xml.parsers.DocumentBuilderFactory;
 
-class Example
+import org.w3c.dom.Document;
+
+class Example 
 {
 	public String description;
-	public String teacherDFA;
-	public String studentDFA;
+	public Document teacherDFA;
+	public Document studentDFA;
 }
 
-public class Automaton
+public class Automaton 
 {
-	public static void main(String[] args)
+	public static void main(String[] args) 
 	{
-
-		// readCSV("dfa1.csv");
-		readXML("example.txt");
-
+		readCSV("dfa1.csv");
 	}
 
-	private static void readCSV(String csvFilename) {
-		File f = new File("dfa1.csv");
+	public static void readCSV(String filename) 
+	{
+		File f = new File(filename);
 		Scanner in = null;
 		try {
 			in = new Scanner(f);
@@ -43,12 +41,18 @@ public class Automaton
 		int feature = 0;	// to cycle between adding members of the example one at a time
 		Example ex = new Example();
 		while (in.hasNext()) {
-			if (feature == 0)
+			if (feature == 0) {
 				ex.description = in.next();
-			if (feature == 1)
-				ex.teacherDFA = in.next().replace("\"", "");
+			}
+			if (feature == 1) {
+				String teacherDfaXml = in.next().replace("\"", "");
+				InputStream is = new ByteArrayInputStream(teacherDfaXml.getBytes());
+				ex.teacherDFA = readXML(is);
+			}
 			if (feature == 2) {
-				ex.studentDFA = in.next().replace("\"", "");
+				String studentDfaXml = in.next().replace("\"", "");
+				InputStream is = new ByteArrayInputStream(studentDfaXml.getBytes());
+				ex.studentDFA = readXML(is);
 				exs.add(ex);
 			}
 
@@ -66,23 +70,25 @@ public class Automaton
 		System.out.println("Num Examples: " + exs.size());
 	}
 
-	private static void readXML(String xmlFilename) {
+	private static Document readXML(InputStream is) 
+	{
 		try {
-			File inputFile = new File(xmlFilename);
-			DocumentBuilderFactory dbFactory
-			= DocumentBuilderFactory.newInstance();
+			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 
-			Document doc = dBuilder.parse(inputFile);
+			Document doc = dBuilder.parse(is);
 
 			doc.getDocumentElement().normalize();
 
-			System.out.println("Root element :"
-            + doc.getDocumentElement().getNodeName());
-
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+//			System.out.println("Root element :" + doc.getDocumentElement().getNodeName());
+			
+			return doc;
+		} 
+		catch (Exception e) {
+			System.out.println("Unknown exception!");
+			e.printStackTrace();
+		}
+		return null;
 	}
 }
