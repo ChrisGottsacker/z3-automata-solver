@@ -83,6 +83,6 @@ public class Automaton
 
 			} catch (Exception e) {
 				e.printStackTrace();
-		}
+			}
 	}
 }
