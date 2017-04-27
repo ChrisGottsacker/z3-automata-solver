@@ -76,13 +76,47 @@ public class Automaton
 
 			Document doc = dBuilder.parse(inputFile);
 
-			doc.getDocumentElement().normalize();
+			Element root = doc.getDocumentElement();
+			root.normalize();
 
-			System.out.println("Root element :"
-            + doc.getDocumentElement().getNodeName());
+			NodeList rootNodes = root.getChildNodes();
+			for(int i = 0; i < rootNodes.getLength(); i++) {
+				Node node = rootNodes.item(i);
+				switch(node.getNodeName()) {
+					case "alphabet":
+						Element alphabet = null;
+						try {
+							alphabet = (Element) node;
 
-			} catch (Exception e) {
-				e.printStackTrace();
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+						NodeList characters = alphabet.getElementsByTagName("symbol");
+
+						for(int charIdx = 0; charIdx < characters.getLength(); charIdx++) {
+							System.out.println(characters.item(charIdx).getTextContent());
+							System.out.println(characters.item(charIdx).getNodeName());
+						}
+						break;
+					case "stateSet":
+						break;
+					case "transitionSet":
+						break;
+					case "acceptingSet":
+						break;
+					case "initState":
+						break;
+					default:
+						break;
+				}
 			}
+
+
+			// Read states
+
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 }
