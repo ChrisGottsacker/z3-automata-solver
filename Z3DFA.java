@@ -208,16 +208,17 @@ class Z3DFA
 			for (int j = 0; j < aSz; j++) {
 				for (int k = 0; k < numStates; k++) {
 					for (int l = 0; l < aSz; l++) {
-						for (int m = 0; m < acceptingTransitions[j][l].length; m++){
-							switch(mode) {
-								case HARD:
-									opt.Assert(ctx.mkImplies(ctx.mkAnd(aNFA[i][j], targetDFA.transitions[i][ acceptingTransitions[j][l][m] ][k]), aNFA[k][l]));
-									break;
-								case SOFT:
-									opt.AssertSoft(ctx.mkImplies(ctx.mkAnd(aNFA[i][j], targetDFA.transitions[i][ acceptingTransitions[j][l][m] ][k]), aNFA[k][l]), transitionWt, relationName);
-									break;
+						if (acceptingTransitions[j][l] != null)
+							for (int m = 0; m < acceptingTransitions[j][l].length; m++){
+								switch(mode) {
+									case HARD:
+										opt.Assert(ctx.mkImplies(ctx.mkAnd(aNFA[i][j], targetDFA.transitions[i][ acceptingTransitions[j][l][m] ][k]), aNFA[k][l]));
+										break;
+									case SOFT:
+										opt.AssertSoft(ctx.mkImplies(ctx.mkAnd(aNFA[i][j], targetDFA.transitions[i][ acceptingTransitions[j][l][m] ][k]), aNFA[k][l]), transitionWt, relationName);
+										break;
+								}
 							}
-						}
 					}
 				}
 			}
