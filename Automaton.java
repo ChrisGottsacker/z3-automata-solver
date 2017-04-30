@@ -19,7 +19,7 @@ import com.microsoft.z3.Log;
 import com.microsoft.z3.Version;
 import com.microsoft.z3.Z3Exception;
 
-class Example 
+class Example
 {
 	public String description;
 	public ParsedAutomaton teacherDFA;
@@ -35,7 +35,7 @@ class ParsedAutomaton
 	public int[] states = null;
 	public int[][][] transitions = null;
 
-	public ParsedAutomaton (int[] acceptingDFA, int initStateDFA, Character[] alphabetDFA, int[] statesDFA, int[][][] transitionsDFA) 
+	public ParsedAutomaton (int[] acceptingDFA, int initStateDFA, Character[] alphabetDFA, int[] statesDFA, int[][][] transitionsDFA)
 	{
 		acceptingStates = acceptingDFA;
 		initState = initStateDFA;
@@ -47,7 +47,7 @@ class ParsedAutomaton
 
 public class Automaton
 {
-	public static void main(String[] args) 
+	public static void main(String[] args)
 	{
 		Z3DFA p = new Z3DFA();
 		try
@@ -111,12 +111,14 @@ public class Automaton
 				Example ex = readCSV("dfa1.csv");
 //				for (int i = 0; i < ex.teacherDFA.transitions.length; i++)
 //					for (int j = 0; j < ex.teacherDFA.transitions[i].length; j++)
-//					{	
+//					{
 //						System.out.println(Arrays.toString(ex.teacherDFA.transitions));
 //						for (int k = 0; k < ex.teacherDFA.transitions[i][j].length; k++)
 //							System.out.println(i + " " + j + " "  + k + "     "  + ex.teacherDFA.transitions[i][j][k]);
 //					}
 				p.getClosestEquivalentDFA(ex.teacherDFA.alphabet, ex.teacherDFA.acceptingStates, ex.teacherDFA.transitions, ex.studentDFA.acceptingStates, ex.studentDFA.transitions);
+
+				// p.getClosestEquivalentDFA(alphabet, canonicalFinalStates, canonicalTransitions, proposedFinalStates, proposedTransitions);
 			}
 			Log.close();
 			if (Log.isOpen())
@@ -134,7 +136,7 @@ public class Automaton
 		}
 	}
 
-	public static Example readCSV(String filename) 
+	public static Example readCSV(String filename)
 	{
 		File f = new File(filename);
 		Scanner in = null;
@@ -177,7 +179,7 @@ public class Automaton
 		return ex;
 	}
 
-	private static Document readXML(InputStream is) 
+	private static Document readXML(InputStream is)
 	{
 		try {
 			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
@@ -191,7 +193,7 @@ public class Automaton
 			//			System.out.println("Root element :" + doc.getDocumentElement().getNodeName());
 
 			return doc;
-		} 
+		}
 		catch (Exception e) {
 			System.out.println("Unknown exception!");
 			e.printStackTrace();
@@ -248,7 +250,7 @@ public class Automaton
 				for(int j = 0; j < states.getLength(); j++) {
 					//System.out.println(states.item(j).getTextContent());
 					statesDFA[j] = Integer.parseInt(states.item(j).getTextContent());
-				}		
+				}
 				break;
 
 			case "transitionSet":
@@ -268,11 +270,11 @@ public class Automaton
 
 
 					if (transitionsDFA[Integer.parseInt(eElement.getElementsByTagName("from").item(0).getTextContent())][Integer.parseInt(eElement.getElementsByTagName("to").item(0).getTextContent())] != null) {
-						transitionsDFA[Integer.parseInt(eElement.getElementsByTagName("from").item(0).getTextContent())][Integer.parseInt(eElement.getElementsByTagName("to").item(0).getTextContent())] = 
+						transitionsDFA[Integer.parseInt(eElement.getElementsByTagName("from").item(0).getTextContent())][Integer.parseInt(eElement.getElementsByTagName("to").item(0).getTextContent())] =
 								transitionsDFA[Integer.parseInt(eElement.getElementsByTagName("from").item(0).getTextContent())][Integer.parseInt(eElement.getElementsByTagName("to").item(0).getTextContent())] + eElement.getElementsByTagName("read").item(0).getTextContent();
 					}
 					else {
-						transitionsDFA[Integer.parseInt(eElement.getElementsByTagName("from").item(0).getTextContent())][Integer.parseInt(eElement.getElementsByTagName("to").item(0).getTextContent())] = eElement.getElementsByTagName("read").item(0).getTextContent();		
+						transitionsDFA[Integer.parseInt(eElement.getElementsByTagName("from").item(0).getTextContent())][Integer.parseInt(eElement.getElementsByTagName("to").item(0).getTextContent())] = eElement.getElementsByTagName("read").item(0).getTextContent();
 					}
 
 					transitions = new int[statesDFA.length][statesDFA.length][];
@@ -308,22 +310,22 @@ public class Automaton
 					}
 
 					//				for (int a = 0; a < transitionsDFA.length; a++) {
-					//					for (int b = 0; b < transitionsDFA[a].length; b++) 
+					//					for (int b = 0; b < transitionsDFA[a].length; b++)
 					//						System.out.println(a + " " + b + " " + transitionsDFA[a][b]);
 					//				}
 
 					for (int a = 0; a < transitions.length; a++) {
-						for (int b = 0; b < transitions[a].length; b++) 
+						for (int b = 0; b < transitions[a].length; b++)
 							if (transitions[a][b] == null) {
-								int[] temp = {-1};
-								transitions[a][b] = temp;	
+								int[] temp = {};
+								transitions[a][b] = temp;
 							}
-					}	
+					}
 				}
 
 
 				//				for (int a = 0; a < transitions.length; a++) {
-				//					for (int b = 0; b < transitions[a].length; b++) 
+				//					for (int b = 0; b < transitions[a].length; b++)
 				//						if (transitions[a][b] != null)
 				//							System.out.println(a + " " + b + " " + Arrays.toString(transitions[a][b]));
 				//				}
