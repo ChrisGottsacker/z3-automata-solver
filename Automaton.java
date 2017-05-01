@@ -163,6 +163,7 @@ public class Automaton
 		int numExceptions = 0;
 		System.out.println("Parsing all examples...");
 		while (in.hasNext()) {
+			int numExceptionsCurrentExample = 0;
 			if (feature == 0) {
 				ex.description = in.next();
 				
@@ -181,6 +182,7 @@ public class Automaton
 				}
 				catch (Exception e) {
 					numExceptions++;
+					numExceptionsCurrentExample++;
 				}
 				ex.teacherDFA = pDFA;
 			}
@@ -194,9 +196,11 @@ public class Automaton
 				}
 				catch (Exception e) {
 					numExceptions++;
+					numExceptionsCurrentExample++;
 				}
 				ex.studentDFA = pDFA;
-				exs.add(ex);
+				if (numExceptionsCurrentExample == 0)
+					exs.add(ex);
 			}
 
 			feature = (feature+1) % 3;
