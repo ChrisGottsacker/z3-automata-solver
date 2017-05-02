@@ -126,7 +126,12 @@ public class Automaton
 				// PARSING FILE HERE
 				// #############################################################################
 				// retrieves an arraylist of examples, each with one studentDFA, teacherDFA and a problem description
-				ArrayList<Example> exs = readCSV("dfa1.csv");
+				String filename = null;
+				System.out.print("Enter a csv file: ");
+				Scanner scnr = new Scanner(System.in);
+				filename = scnr.nextLine();
+				
+				ArrayList<Example> exs = readCSV(filename);
 				
 				long startTime = System.nanoTime();
 				for (int a = 0; a < exs.size(); a++) {
@@ -167,6 +172,7 @@ public class Automaton
 			in = new Scanner(f);
 		} catch (FileNotFoundException e) {
 			System.out.println("File not found!");
+			System.exit(1);
 		}
 
 		in.useDelimiter(",|\"\n\"");
