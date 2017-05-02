@@ -1,4 +1,4 @@
-# Automaton Finder using Z3
+# Automata Finder using Z3
 
 Z3 can be installed using instructions from https://github.com/Z3Prover/z3
 
