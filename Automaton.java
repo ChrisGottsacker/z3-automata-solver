@@ -89,19 +89,35 @@ public class Automaton
 
 				p.getMinEquivalentDFA(alphabet, acceptingFinalStates2, acceptingTransitions2);
 
-				/* Previously used DFAs for part 3
-				int[] canonicalFinalStates = {0};
-				int[][][] canonicalTransitions = {
-						{{}, {0,1}},
-						{{0}, {1}}
-				};
+				/* Previously used DFAs for part 3 
+	 			int[] teacherFinalStates = {1};
+	 			int[][][] teacherTransitions = {
+	 				{{1}, {0}},
+	 				{{0}, {1}}
+	 			};
+	
+	 			int[] studentFinalStates = {1,2};
+	 			int[][][] studentTransitions = {
+	 				{{}, {0}, {1}},
+	 				{{0}, {1}, {}},
+	 				{{}, {}, {0,1}}
+	 			};
 
-				int[] proposedFinalStates = {0};
-				int[][][] proposedTransitions = {
-						{{}, {1}, {0}},
-						{{}, {1}, {0}},
-						{{}, {1}, {0}}
-				};
+				
+//				int[] teacherFinalStates = {0};
+//				int[][][] teacherTransitions = {
+//						{{}, {0,1}},
+//						{{0}, {1}}
+//				};
+//
+//				int[] studentFinalStates = {0};
+//				int[][][] studentTransitions = {
+//						{{}, {1}, {0}},
+//						{{}, {1}, {0}},
+//						{{}, {1}, {0}}
+//				};
+				
+				p.getClosestEquivalentDFA(alphabet, teacherFinalStates, teacherTransitions, studentFinalStates, studentTransitions);
 				*/
 
 				// PART THREE
@@ -122,7 +138,7 @@ public class Automaton
 				}
 				long endTime = System.nanoTime();
 				long totalDuration = (endTime - startTime)/1000000;
-				System.out.println("Total time: " + totalDuration + " ms");
+				System.out.println("Total time: " + (float)totalDuration/1000 + " seconds");
 				System.out.println("Average time per example: " + totalDuration/exs.size() + " ms");
 				
 			}
