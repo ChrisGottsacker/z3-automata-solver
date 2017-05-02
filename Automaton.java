@@ -127,25 +127,64 @@ public class Automaton
 				// #############################################################################
 				// retrieves an arraylist of examples, each with one studentDFA, teacherDFA and a problem description
 				String filename = null;
-				System.out.print("Enter a csv file: ");
+				System.out.print("Enter a csv file: ");	// try dfa1.csv for an example
 				Scanner scnr = new Scanner(System.in);
 				filename = scnr.nextLine();
 				
 				ArrayList<Example> exs = readCSV(filename);
 				
-				long startTime = System.nanoTime();
+				int maxStudentStates = 0;
+				int maxStudentStatesPos = 0;
+				int minStudentStates = exs.get(0).studentDFA.states.length;
+				int minStudentStatesPos = 0;
 				for (int a = 0; a < exs.size(); a++) {
-					System.out.println("Example " + a + ":\n");
 					Example ex = exs.get(a);
-					System.out.println(ex.description);
 					// part 3
-					p.getClosestEquivalentDFA(ex.teacherDFA.alphabet, ex.teacherDFA.acceptingStates, ex.teacherDFA.transitions, ex.studentDFA.acceptingStates, ex.studentDFA.transitions);
+					if (ex.studentDFA.states.length > maxStudentStates) {
+						maxStudentStates = ex.studentDFA.states.length;
+						maxStudentStatesPos = a;
+					}
+						
+					if (ex.studentDFA.states.length < minStudentStates) {
+						minStudentStates = ex.studentDFA.states.length;
+						minStudentStatesPos = a;
+					}
 				}
-				long endTime = System.nanoTime();
-				long totalDuration = (endTime - startTime)/1000000;
+			
+				long[] endtimes = new long[maxStudentStates + 1];
+				long initTime = System.nanoTime();
+				for (int state = minStudentStates; state <= maxStudentStates; state++) {
+					System.out.println("All examples with " + state + " states:");
+					int numExamplesForCurrState = 0;
+					long startTime = System.nanoTime();
+					for (int a = 0; a < exs.size(); a++) {
+						Example ex = exs.get(a);
+						if (ex.studentDFA.states.length == state) {
+							System.out.println("Example " + a + ":\n");
+							numExamplesForCurrState++;
+							System.out.println(ex.description);
+							p.getClosestEquivalentDFA(ex.teacherDFA.alphabet, ex.teacherDFA.acceptingStates, ex.teacherDFA.transitions, ex.studentDFA.acceptingStates, ex.studentDFA.transitions);
+						}
+					}
+					long endTime = System.nanoTime();
+					System.out.println(numExamplesForCurrState + " examples for state " + state);
+					endtimes[state] = (endTime - startTime) / (1000000 * numExamplesForCurrState);
+				}
+				long finalEndTime = System.nanoTime();
+				
+				
+				long totalDuration = (finalEndTime - initTime)/1000000;
 				System.out.println("Total time: " + (float)totalDuration/1000 + " seconds");
 				System.out.println("Average time per example: " + totalDuration/exs.size() + " ms");
 				
+				System.out.println("Max Student DFA States: " + maxStudentStates + " (at position " + maxStudentStatesPos + 
+						")\nMin Student DFA States: " + minStudentStates + " (at position " + minStudentStatesPos + ")");
+				
+				
+				System.out.println("\nAverage time by number of states: ");
+				for (int state = minStudentStates; state <= maxStudentStates; state++) {
+					System.out.println(state + " States: " + endtimes[state] + " ms per example");
+				}
 			}
 			Log.close();
 			if (Log.isOpen())
