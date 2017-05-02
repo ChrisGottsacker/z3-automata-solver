@@ -17,6 +17,7 @@ import com.microsoft.z3.Log;
 import com.microsoft.z3.Version;
 import com.microsoft.z3.Z3Exception;
 
+// This class represents one example parsed from the input file
 class Example 
 {
 	public String description;
@@ -24,7 +25,7 @@ class Example
 	public ParsedAutomaton studentDFA;
 }
 
-
+// This class represents a single DFA
 class ParsedAutomaton
 {
 	public int[] acceptingStates = null;
@@ -43,6 +44,7 @@ class ParsedAutomaton
 	}
 }
 
+// Main class, which parses the DFAs from the input file
 public class Automaton
 {
 	public static void main(String[] args) 
@@ -57,30 +59,27 @@ public class Automaton
 			System.out.println(Version.getMajor());
 			System.out.print("Z3 Full Version: ");
 			System.out.println(Version.getString());
-			// System.out.print("Z3 Full Version String: ");
-			// System.out.println(Version.getFullVersion());
-
 			{
-				// setting up the input DFAs
+				// setting up the input DFAs for part 1
 				Character alphabet[] = {'a', 'b'};
-				int[] acceptingFinalStates = {0};
+				int[] acceptingFinalStates1 = {0};
 				// integer is index into alphabet[]
-				int[][][] acceptingTransitions = {
+				int[][][] acceptingTransitions1 = {
 						{{}, {0}},
 						{{0}, {}}
 				};
 
-				int[] rejectingFinalStates = {1};
-				int[][][] rejectingTransitions = {
+				int[] rejectingFinalStates1 = {1};
+				int[][][] rejectingTransitions1 = {
 						{{}, {1}},
 						{{}, {1}}
 				};
 
 				// Part One
-				p.getMinSepDFA(alphabet, acceptingFinalStates, acceptingTransitions, rejectingFinalStates, rejectingTransitions);
+				p.getMinSepDFA(alphabet, acceptingFinalStates1, acceptingTransitions1, rejectingFinalStates1, rejectingTransitions1);
 
 				// Part Two
-
+				// setting up the input DFAs for part 2
 				int[] acceptingFinalStates2 = {0, 2};
 				int[][][] acceptingTransitions2 = {
 						{{}, {1}, {0}},
@@ -90,6 +89,7 @@ public class Automaton
 
 				p.getMinEquivalentDFA(alphabet, acceptingFinalStates2, acceptingTransitions2);
 
+				/* Previously used DFAs for part 3
 				int[] canonicalFinalStates = {0};
 				int[][][] canonicalTransitions = {
 						{{}, {0,1}},
@@ -102,24 +102,22 @@ public class Automaton
 						{{}, {1}, {0}},
 						{{}, {1}, {0}}
 				};
+				*/
 
+				// PART THREE
+				
 				// #############################################################################
 				// PARSING FILE HERE
 				// #############################################################################
+				// retrieves an arraylist of examples, each with one studentDFA, teacherDFA and a problem description
 				ArrayList<Example> exs = readCSV("dfa1.csv");
-//				for (int i = 0; i < ex.teacherDFA.transitions.length; i++)
-//					for (int j = 0; j < ex.teacherDFA.transitions[i].length; j++)
-//					{	
-//						System.out.println(Arrays.toString(ex.teacherDFA.transitions));
-//						for (int k = 0; k < ex.teacherDFA.transitions[i][j].length; k++)
-//							System.out.println(i + " " + j + " "  + k + "     "  + ex.teacherDFA.transitions[i][j][k]);
-//					}
 				
 				long startTime = System.nanoTime();
 				for (int a = 0; a < exs.size(); a++) {
 					System.out.println("Example " + a + ":\n");
 					Example ex = exs.get(a);
 					System.out.println(ex.description);
+					// part 3
 					p.getClosestEquivalentDFA(ex.teacherDFA.alphabet, ex.teacherDFA.acceptingStates, ex.teacherDFA.transitions, ex.studentDFA.acceptingStates, ex.studentDFA.transitions);
 				}
 				long endTime = System.nanoTime();
@@ -144,6 +142,7 @@ public class Automaton
 		}
 	}
 
+	// takes in a CSV file as input and parses it
 	public static ArrayList<Example> readCSV(String filename) 
 	{
 		File f = new File(filename);
@@ -164,17 +163,18 @@ public class Automaton
 		System.out.println("Parsing all examples...");
 		while (in.hasNext()) {
 			int numExceptionsCurrentExample = 0;
-			if (feature == 0) {
+			if (feature == 0) {	// problem description
 				ex = new Example();
 				ex.description = in.next();
 			}
-			if (feature == 1) {
+			if (feature == 1) {	// teacherDFA
 				String teacherDfaXml = in.next().replace("\"", "");
-
 				InputStream is = new ByteArrayInputStream(teacherDfaXml.getBytes());
+				// parses the XML format for the teacher DFA
 				Document teacher = readXML(is);
 				ParsedAutomaton pDFA = null;
 				try {
+					// get a ParsedAutomaton (final automaton) for teacher
 					pDFA = getAutomaton(teacher);
 				}
 				catch (Exception e) {
@@ -183,12 +183,14 @@ public class Automaton
 				}
 				ex.teacherDFA = pDFA;
 			}
-			if (feature == 2) {
+			if (feature == 2) {	// studentDFA
 				String studentDfaXml = in.next().replace("\"", "");
 				InputStream is = new ByteArrayInputStream(studentDfaXml.getBytes());
+				// parses the XML format for the student DFA
 				Document student = readXML(is);
 				ParsedAutomaton pDFA = null;
 				try {
+					// get a ParsedAutomaton (final automaton) for student
 					pDFA = getAutomaton(student);
 				}
 				catch (Exception e) {
@@ -197,6 +199,7 @@ public class Automaton
 				}
 				ex.studentDFA = pDFA;
 
+				// if this example didn't raise any exceptions during parsing, add it to the list
 				if (numExceptionsCurrentExample == 0) {
 					exs.add(ex);
 				}
@@ -210,6 +213,7 @@ public class Automaton
 		return exs;
 	}
 
+	// This method reads a single DFA's XML and returns the information as a Document
 	private static Document readXML(InputStream is) 
 	{
 		try {
@@ -229,6 +233,7 @@ public class Automaton
 		return null;
 	}
 
+	// Most of the parsing is done in this method
 	private static ParsedAutomaton getAutomaton(Document doc)
 	{
 		Element root = doc.getDocumentElement();
@@ -299,10 +304,6 @@ public class Automaton
 					Node nNode = transitionsInDFA.item(charIdx);
 					Element eElement = (Element) nNode;
 
-//					System.out.println("From " + eElement.getElementsByTagName("from").item(0).getTextContent());
-//					System.out.println("To " + eElement.getElementsByTagName("to").item(0).getTextContent());
-//					System.out.println(transitionsDFA.length + " " + transitionsDFA[0].length);
-					
 					if (transitionsDFA[Integer.parseInt(eElement.getElementsByTagName("from").item(0).getTextContent())][Integer.parseInt(eElement.getElementsByTagName("to").item(0).getTextContent())] != null) {
 						transitionsDFA[Integer.parseInt(eElement.getElementsByTagName("from").item(0).getTextContent())][Integer.parseInt(eElement.getElementsByTagName("to").item(0).getTextContent())] = 
 								transitionsDFA[Integer.parseInt(eElement.getElementsByTagName("from").item(0).getTextContent())][Integer.parseInt(eElement.getElementsByTagName("to").item(0).getTextContent())] + eElement.getElementsByTagName("read").item(0).getTextContent();
@@ -343,11 +344,6 @@ public class Automaton
 						//System.out.println(eElement.getElementsByTagName("read").item(0).getTextContent());
 					}
 
-					//				for (int a = 0; a < transitionsDFA.length; a++) {
-					//					for (int b = 0; b < transitionsDFA[a].length; b++) 
-					//						System.out.println(a + " " + b + " " + transitionsDFA[a][b]);
-					//				}
-
 					for (int a = 0; a < transitions.length; a++) {
 						for (int b = 0; b < transitions[a].length; b++) 
 							if (transitions[a][b] == null) {
@@ -356,13 +352,6 @@ public class Automaton
 							}
 					}	
 				}
-
-
-				//				for (int a = 0; a < transitions.length; a++) {
-				//					for (int b = 0; b < transitions[a].length; b++) 
-				//						if (transitions[a][b] != null)
-				//							System.out.println(a + " " + b + " " + Arrays.toString(transitions[a][b]));
-				//				}
 
 				break;
 
@@ -408,6 +397,7 @@ public class Automaton
 			}
 		}
 
+		// Create a new DFA object from all the parsed information and return it
 		ParsedAutomaton pDFA = new ParsedAutomaton(acceptingDFA, initStateDFA, alphabetDFA, statesDFA, transitions);
 
 		return pDFA;
