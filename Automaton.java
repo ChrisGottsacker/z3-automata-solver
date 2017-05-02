@@ -116,10 +116,10 @@ public class Automaton
 //					}
 				
 				long startTime = System.nanoTime();
-				for (int i = 0; i < exs.size(); i++) {
-					System.out.println("Example " + i + ":\n");
-					Example ex = exs.get(i);
-					
+				for (int a = 0; a < exs.size(); a++) {
+					System.out.println("Example " + a + ":\n");
+					Example ex = exs.get(a);
+					System.out.println(ex.description);
 					p.getClosestEquivalentDFA(ex.teacherDFA.alphabet, ex.teacherDFA.acceptingStates, ex.teacherDFA.transitions, ex.studentDFA.acceptingStates, ex.studentDFA.transitions);
 				}
 				long endTime = System.nanoTime();
@@ -159,17 +159,14 @@ public class Automaton
 		ArrayList<Example> exs = new ArrayList<Example>();
 
 		int feature = 0;	// to cycle between adding members of the example one at a time
-		Example ex = new Example();
+		Example ex = null;
 		int numExceptions = 0;
 		System.out.println("Parsing all examples...");
 		while (in.hasNext()) {
 			int numExceptionsCurrentExample = 0;
 			if (feature == 0) {
+				ex = new Example();
 				ex.description = in.next();
-				
-//				if (ex.description.equals("Any string that doesn't contain exactly two a's.\"")) {
-//					System.out.println(ex.description);
-//				}
 			}
 			if (feature == 1) {
 				String teacherDfaXml = in.next().replace("\"", "");
@@ -199,14 +196,17 @@ public class Automaton
 					numExceptionsCurrentExample++;
 				}
 				ex.studentDFA = pDFA;
-				if (numExceptionsCurrentExample == 0)
+
+				if (numExceptionsCurrentExample == 0) {
 					exs.add(ex);
+				}
 			}
 
 			feature = (feature+1) % 3;
 		}
 
 		System.out.println("Number of exceptions: " + numExceptions);
+
 		return exs;
 	}
 
