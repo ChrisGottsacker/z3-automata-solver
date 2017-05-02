@@ -19,7 +19,8 @@ class Z3DFA
 		while (sat == Status.UNSATISFIABLE) {
 			Optimize opt = ctx.mkOptimize();
 
-			Z3Automata minSepDFA = addTargetDFAassertions(ctx, opt, numStates, alphabet);
+			Z3Automata minSepDFA = getNewTargetDFA(ctx, numStates, alphabet);
+			addTargetDFAassertions(ctx, opt, minSepDFA);
 
 			addAcceptingAssertions(ctx, opt, numStates, acceptingTransitions, acceptingFinalStates, minSepDFA, "X");
 
@@ -48,7 +49,8 @@ class Z3DFA
 			// Final states in DFA
 			Optimize opt = ctx.mkOptimize();
 
-			Z3Automata minEquivDFA = addTargetDFAassertions(ctx, opt, numStates, alphabet);
+			Z3Automata minEquivDFA = getNewTargetDFA(ctx, numStates, alphabet);
+			addTargetDFAassertions(ctx, opt, minEquivDFA);
 
 			BoolExpr[][] aNFA = addAcceptingAssertions(ctx, opt, numStates, acceptingTransitions, acceptingFinalStates, minEquivDFA, "X");
 
@@ -79,11 +81,14 @@ class Z3DFA
 
 		Context ctx = getNewContext();
 		Optimize opt = ctx.mkOptimize();
-		Z3Automata closestEquivalentDFA = addTargetDFAassertions(ctx, opt, numStates, alphabet);
+		Z3Automata closestEquivalentDFA = getNewTargetDFA(ctx, numStates, alphabet);
+		addTargetDFAassertions(ctx, opt, closestEquivalentDFA);
 
 		BoolExpr[][] aNFA = addAcceptingAssertions(ctx, opt, numStates, canonicalTransitions, canonicalFinalStates, closestEquivalentDFA, "X");
 
 		addEquivalenceAssertions(ctx, opt, aNFA, canonicalFinalStates, closestEquivalentDFA);
+
+		// addSimilaritySoftAssertions()
 
 		Status sat = opt.Check();
 		if (sat == Status.SATISFIABLE) {
@@ -103,8 +108,7 @@ class Z3DFA
 		return new Context(cfg);
 	}
 
-
-	private Z3Automata addTargetDFAassertions(Context ctx, Optimize opt, int numStates, Character[] alphabet)
+	private Z3Automata getNewTargetDFA(Context ctx, int numStates, Character[] alphabet)
 	{
 		BoolExpr[] finalStates = new BoolExpr[numStates];
 		for (int i = 0; i < numStates; i++) {
@@ -121,29 +125,32 @@ class Z3DFA
 			}
 		}
 
+		return new Z3Automata(transitions, finalStates, alphabet);
+	}
+
+	private void addTargetDFAassertions(Context ctx, Optimize opt, Z3Automata targetDFA)
+	{
 		// assert DFA not NFA
-		for (int j = 0; j < alphabet.length; j++) {
-			for (int i = 0; i < numStates; i++) {
+		for (int j = 0; j < targetDFA.alphabet.length; j++) {
+			for (int i = 0; i < targetDFA.numStates; i++) {
 				BoolExpr bexp = ctx.mkBool(false);
-				for (int k = 0; k < numStates; k++) {
-					bexp = ctx.mkOr(ctx.mkNot(transitions[i][j][k]), bexp);
+				for (int k = 0; k < targetDFA.numStates; k++) {
+					bexp = ctx.mkOr(ctx.mkNot(targetDFA.transitions[i][j][k]), bexp);
 				}
 				opt.Assert(bexp);
 			}
 		}
 
 		// assert DFA's transition function is total (i.e. complete DFA)
-		for (int j = 0; j < alphabet.length; j++) {
-			for (int i = 0; i < numStates; i++) {
+		for (int j = 0; j < targetDFA.alphabet.length; j++) {
+			for (int i = 0; i < targetDFA.numStates; i++) {
 				BoolExpr bexp = ctx.mkBool(false);
-				for (int k = 0; k < numStates; k++) {
-					bexp = ctx.mkOr(transitions[i][j][k], bexp);
+				for (int k = 0; k < targetDFA.numStates; k++) {
+					bexp = ctx.mkOr(targetDFA.transitions[i][j][k], bexp);
 				}
 				opt.Assert(bexp);
 			}
 		}
-
-		return new Z3Automata(transitions, finalStates, alphabet);
 	}
 
 
