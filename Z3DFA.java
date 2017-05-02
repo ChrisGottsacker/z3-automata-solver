@@ -34,9 +34,11 @@ class Z3DFA
 			numStates++;
 		}
 	}
-
+	
+	
 	/* ########################### PART TWO ########################### */
-	void getMinEquivalentDFA(Character[] alphabet, int[] acceptingFinalStates, int[][][] acceptingTransitions) {
+	void getMinEquivalentDFA(Character[] alphabet, int[] acceptingFinalStates, int[][][] acceptingTransitions) 
+	{
 		System.out.println("DFA Part 2: Get equivalent DFA of a smaller size\n");
 
 		Context ctx = getNewContext();
@@ -71,6 +73,7 @@ class Z3DFA
 		}
 
 	}
+	
 
 	/* ########################### PART THREE ########################### */
 	void getClosestEquivalentDFA(Character[] alphabet, int[] canonicalFinalStates, int[][][] canonicalTransitions, int[] providedFinalStates, int[][][] providedTransitions)
@@ -98,6 +101,7 @@ class Z3DFA
 			System.out.println("Failed to generate similar, but correct, automata");
 		}
 	}
+	
 
 	private Context getNewContext()
 	{
@@ -156,7 +160,8 @@ class Z3DFA
 	}
 
 
-	private BoolExpr[][] addRejectingAssertions(Context ctx, Optimize opt, int numStates, int[][][] rejectingTransitions, int[] rejectingFinalStates, Z3Automata targetDFA, String relationName){
+	private BoolExpr[][] addRejectingAssertions(Context ctx, Optimize opt, int numStates, int[][][] rejectingTransitions, int[] rejectingFinalStates, Z3Automata targetDFA, String relationName)
+	{
 		int rSz = rejectingTransitions.length;
 
 		//match up with rejecting NFA
@@ -194,8 +199,8 @@ class Z3DFA
 	}
 
 
-	private BoolExpr[][] addAcceptingAssertions(Context ctx, Optimize opt, int numStates, int[][][] acceptingTransitions,
-			int[] acceptingFinalStates, Z3Automata targetDFA, String relationName){
+	private BoolExpr[][] addAcceptingAssertions(Context ctx, Optimize opt, int numStates, int[][][] acceptingTransitions, int[] acceptingFinalStates, Z3Automata targetDFA, String relationName)
+	{
 		int aSz = acceptingTransitions.length;
 
 		//match up with accepting NFA
@@ -217,7 +222,7 @@ class Z3DFA
 						if (acceptingTransitions[j][l] != null)
 							for (int m = 0; m < acceptingTransitions[j][l].length; m++){
 								opt.Assert(ctx.mkImplies(ctx.mkAnd(aNFA[i][j], targetDFA.transitions[i][ acceptingTransitions[j][l][m] ][k]), aNFA[k][l]));
-							}
+						}
 					}
 				}
 			}
@@ -306,6 +311,7 @@ class Z3DFA
 
 		return transAssignments;
 	}
+	
 
 	// returns an array with values showing which final states are included in the output
 	private BoolExpr[] getFinalStateAssignments(Model model, BoolExpr[] finalStates, int numStates)
@@ -366,88 +372,11 @@ class Z3DFA
 		}
 	}
 
-	/* ########################### PART TWO ########################### */
 
-
-
-	// public static void main(String[] args)
-	// {
-	// 	Z3DFA p = new Z3DFA();
-	// 	try
-	// 	{
-	// 		com.microsoft.z3.Global.ToggleWarningMessages(true);
-	// 		Log.open("test.log");
-	//
-	// 		System.out.print("Z3 Major Version: ");
-	// 		System.out.println(Version.getMajor());
-	// 		System.out.print("Z3 Full Version: ");
-	// 		System.out.println(Version.getString());
-	// 		// System.out.print("Z3 Full Version String: ");
-	// 		// System.out.println(Version.getFullVersion());
-	//
-	// 		{
-	// 			// // setting up the input DFAs
-	// 			Character alphabet[] = {'a', 'b'};
-	// 			// int[] acceptingFinalStates = {0};
-	// 			// // integer is index into alphabet[]
-	// 			// int[][][] acceptingTransitions = {
-	// 			// 		{{}, {0}},
-	// 			// 		{{0}, {}}
-	// 			// };
-	// 			//
-	// 			// int[] rejectingFinalStates = {1};
-	// 			// int[][][] rejectingTransitions = {
-	// 			// 		{{}, {1}},
-	// 			// 		{{}, {1}}
-	// 			// };
-	// 			//
-	// 			// // Part One
-	// 			// p.getMinSepDFA(alphabet, acceptingFinalStates, acceptingTransitions, rejectingFinalStates, rejectingTransitions);
-	// 			//
-	// 			// // Part Two
-	// 			//
-	// 			// int[] acceptingFinalStates2 = {0, 2};
-	// 			// int[][][] acceptingTransitions2 = {
-	// 			// 	{{}, {1}, {0}},
-	// 			// 	{{}, {1}, {0}},
-	// 			// 	{{}, {1}, {0}}
-	// 			// };
-	// 			//
-	// 			// p.getMinEquivalentDFA(alphabet, acceptingFinalStates2, acceptingTransitions2);
-	//
-	// 			int[] canonicalFinalStates = {1};
-	// 			int[][][] canonicalTransitions = {
-	// 				{{1}, {0}},
-	// 				{{0}, {1}}
-	// 			};
-	//
-	// 			int[] proposedFinalStates = {0};
-	// 			int[][][] proposedTransitions = {
-	// 				{{}, {0}, {1}},
-	// 				{{0}, {1}, {}},
-	// 				{{}, {}, {0,1}}
-	// 			};
-	//
-	// 			p.getClosestEquivalentDFA(alphabet, canonicalFinalStates, canonicalTransitions, proposedFinalStates, proposedTransitions);
-	// 		}
-	// 		Log.close();
-	// 		if (Log.isOpen())
-	// 			System.out.println("Log is still open!");
-	// 	} catch (Z3Exception ex)
-	// 	{
-	// 		System.out.println("Z3 Managed Exception: " + ex.getMessage());
-	// 		System.out.println("Stack trace: ");
-	// 		ex.printStackTrace(System.out);
-	// 	} catch (Exception ex)
-	// 	{
-	// 		System.out.println("Unknown Exception: " + ex.getMessage());
-	// 		System.out.println("Stack trace: ");
-	// 		ex.printStackTrace(System.out);
-	// 	}
-	// }
 }
 
-class Z3Automata {
+class Z3Automata 
+{
 	BoolExpr[] finalStates;
 	// BoolExpr[state s][transition a][state d(s,a)]
 	BoolExpr[][][] transitions;
