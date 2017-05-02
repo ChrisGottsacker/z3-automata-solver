@@ -88,7 +88,7 @@ class Z3DFA
 
 		addEquivalenceAssertions(ctx, opt, aNFA, canonicalFinalStates, closestEquivalentDFA);
 
-		// addSimilaritySoftAssertions()
+		addSimilaritySoftAssertions(ctx, opt, providedFinalStates, providedTransitions, closestEquivalentDFA, "S");
 
 		Status sat = opt.Check();
 		if (sat == Status.SATISFIABLE) {
@@ -107,6 +107,7 @@ class Z3DFA
 		// cfg.put("proof", "true");
 		return new Context(cfg);
 	}
+
 
 	private Z3Automata getNewTargetDFA(Context ctx, int numStates, Character[] alphabet)
 	{
@@ -127,6 +128,7 @@ class Z3DFA
 
 		return new Z3Automata(transitions, finalStates, alphabet);
 	}
+
 
 	private void addTargetDFAassertions(Context ctx, Optimize opt, Z3Automata targetDFA)
 	{
@@ -191,11 +193,10 @@ class Z3DFA
 		return rNFA;
 	}
 
+
 	private BoolExpr[][] addAcceptingAssertions(Context ctx, Optimize opt, int numStates, int[][][] acceptingTransitions,
 			int[] acceptingFinalStates, Z3Automata targetDFA, String relationName){
 		int aSz = acceptingTransitions.length;
-		int transitionWt = 1;
-		int finalStateWt = 1;
 
 		//match up with accepting NFA
 		BoolExpr[][] aNFA = new BoolExpr[numStates][aSz];
@@ -241,6 +242,7 @@ class Z3DFA
 				for (int a = 0; a < acceptingFinalStates.length; a++) {
 					if(j == acceptingFinalStates[a]) {
 						isFinal = true;
+						break;
 					}
 				}
 				if(isFinal) {
@@ -251,6 +253,40 @@ class Z3DFA
 				}
 			}
 		}
+	}
+
+
+	private void addSimilaritySoftAssertions(Context ctx, Optimize opt, int[] desiredFinalStates, int[][][] desiredTransitions, Z3Automata outputDFA, String relationName)
+	{
+		int transitionWt = 1;
+		int finalStateWt = 1;
+		// for all transitions in desired automata, add soft assertion
+		for(int fromState = 0; fromState < desiredTransitions.length; fromState++) {
+			for(int toState = 0; toState < desiredTransitions[0].length; toState++) {
+				for(int transitionIdx = 0; transitionIdx < desiredTransitions[fromState][toState].length; transitionIdx++) {
+					int transitionChar = desiredTransitions[fromState][toState][transitionIdx];
+					opt.AssertSoft(outputDFA.transitions[fromState][transitionChar][toState], transitionWt, relationName);
+				}
+			}
+		}
+
+		// for all final states in desired automata, add soft assertion
+		for(int fromState = 0; fromState < outputDFA.finalStates.length; fromState++) {
+			boolean isFinal = false;
+			for (int f = 0; f < desiredFinalStates.length; f++) {
+				if(fromState == desiredFinalStates[f]) {
+					isFinal = true;
+					break;
+				}
+			}
+			if(isFinal) {
+				opt.AssertSoft(outputDFA.finalStates[fromState], finalStateWt, relationName);
+			}
+			else {
+				opt.AssertSoft(ctx.mkNot(outputDFA.finalStates[fromState]), finalStateWt, relationName);
+			}
+		}
+
 	}
 
 
@@ -300,6 +336,7 @@ class Z3DFA
 		System.out.println("\n--------------------------------------------------\n");
 	}
 
+
 	/*
 	 * Prints all the final states in the output DFA
 	 */
@@ -310,6 +347,7 @@ class Z3DFA
 			System.out.println("State " + i + ": " + finalStateAssignments[i]);
 		}
 	}
+
 
 	/*
 	 * Prints all the transitions in the output DFA
