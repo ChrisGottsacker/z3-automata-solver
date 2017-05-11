@@ -113,8 +113,7 @@ public class Automaton
 			runningTime + "," +
 			ex.teacherDFA.states.length + "," +
 			ex.studentDFA.states.length + "," +
-			ex.studentDFA.alphabet.length + "," +
-			"\n"
+			ex.studentDFA.alphabet.length + "\n"
 			);
 		}
 
