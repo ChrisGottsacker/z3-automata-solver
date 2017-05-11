@@ -18,11 +18,12 @@ import com.microsoft.z3.Version;
 import com.microsoft.z3.Z3Exception;
 
 // This class represents one example parsed from the input file
-class Example 
+class Example
 {
 	public String description;
 	public ParsedAutomaton teacherDFA;
 	public ParsedAutomaton studentDFA;
+	public int id;
 }
 
 // This class represents a single DFA
@@ -34,7 +35,7 @@ class ParsedAutomaton
 	public int[] states = null;
 	public int[][][] transitions = null;
 
-	public ParsedAutomaton (int[] acceptingDFA, int initStateDFA, Character[] alphabetDFA, int[] statesDFA, int[][][] transitionsDFA) 
+	public ParsedAutomaton (int[] acceptingDFA, int initStateDFA, Character[] alphabetDFA, int[] statesDFA, int[][][] transitionsDFA)
 	{
 		acceptingStates = acceptingDFA;
 		initState = initStateDFA;
@@ -47,7 +48,7 @@ class ParsedAutomaton
 // Main class, which parses the DFAs from the input file
 public class Automaton
 {
-	public static void main(String[] args) 
+	public static void main(String[] args)
 	{
 		Z3DFA p = new Z3DFA();
 		try
@@ -89,13 +90,13 @@ public class Automaton
 
 				p.getMinEquivalentDFA(alphabet, acceptingFinalStates2, acceptingTransitions2);
 
-				/* Previously used DFAs for part 3 
+				/* Previously used DFAs for part 3
 	 			int[] teacherFinalStates = {1};
 	 			int[][][] teacherTransitions = {
 	 				{{1}, {0}},
 	 				{{0}, {1}}
 	 			};
-	
+
 	 			int[] studentFinalStates = {1,2};
 	 			int[][][] studentTransitions = {
 	 				{{}, {0}, {1}},
@@ -103,7 +104,7 @@ public class Automaton
 	 				{{}, {}, {0,1}}
 	 			};
 
-				
+
 //				int[] teacherFinalStates = {0};
 //				int[][][] teacherTransitions = {
 //						{{}, {0,1}},
@@ -116,12 +117,12 @@ public class Automaton
 //						{{}, {1}, {0}},
 //						{{}, {1}, {0}}
 //				};
-				
+
 				p.getClosestEquivalentDFA(alphabet, teacherFinalStates, teacherTransitions, studentFinalStates, studentTransitions);
 				*/
 
 				// PART THREE
-				
+
 				// #############################################################################
 				// PARSING FILE HERE
 				// #############################################################################
@@ -130,9 +131,9 @@ public class Automaton
 				System.out.print("Enter a csv file: ");	// try dfa1.csv for an example
 				Scanner scnr = new Scanner(System.in);
 				filename = scnr.nextLine();
-				
+
 				ArrayList<Example> exs = readCSV(filename);
-				
+
 				int maxStudentStates = 0;
 				int maxStudentStatesPos = 0;
 				int minStudentStates = exs.get(0).studentDFA.states.length;
@@ -144,13 +145,13 @@ public class Automaton
 						maxStudentStates = ex.studentDFA.states.length;
 						maxStudentStatesPos = a;
 					}
-						
+
 					if (ex.studentDFA.states.length < minStudentStates) {
 						minStudentStates = ex.studentDFA.states.length;
 						minStudentStatesPos = a;
 					}
 				}
-			
+
 				long[] endtimes = new long[maxStudentStates + 1];
 				long initTime = System.nanoTime();
 				for (int state = minStudentStates; state <= maxStudentStates; state++) {
@@ -160,7 +161,7 @@ public class Automaton
 					for (int a = 0; a < exs.size(); a++) {
 						Example ex = exs.get(a);
 						if (ex.studentDFA.states.length == state) {
-							System.out.println("Example " + a + ":\n");
+							System.out.println("Example " + ex.id + ":\n");
 							numExamplesForCurrState++;
 							System.out.println(ex.description);
 							p.getClosestEquivalentDFA(ex.teacherDFA.alphabet, ex.teacherDFA.acceptingStates, ex.teacherDFA.transitions, ex.studentDFA.acceptingStates, ex.studentDFA.transitions);
@@ -171,16 +172,16 @@ public class Automaton
 					endtimes[state] = (endTime - startTime) / (1000000 * numExamplesForCurrState);
 				}
 				long finalEndTime = System.nanoTime();
-				
-				
+
+
 				long totalDuration = (finalEndTime - initTime)/1000000;
 				System.out.println("Total time: " + (float)totalDuration/1000 + " seconds");
 				System.out.println("Average time per example: " + totalDuration/exs.size() + " ms");
-				
-				System.out.println("Max Student DFA States: " + maxStudentStates + " (at position " + maxStudentStatesPos + 
+
+				System.out.println("Max Student DFA States: " + maxStudentStates + " (at position " + maxStudentStatesPos +
 						")\nMin Student DFA States: " + minStudentStates + " (at position " + minStudentStatesPos + ")");
-				
-				
+
+
 				System.out.println("\nAverage time by number of states: ");
 				for (int state = minStudentStates; state <= maxStudentStates; state++) {
 					System.out.println(state + " States: " + endtimes[state] + " ms per example");
@@ -203,7 +204,7 @@ public class Automaton
 	}
 
 	// takes in a CSV file as input and parses it
-	public static ArrayList<Example> readCSV(String filename) 
+	public static ArrayList<Example> readCSV(String filename)
 	{
 		File f = new File(filename);
 		Scanner in = null;
@@ -221,11 +222,13 @@ public class Automaton
 		int feature = 0;	// to cycle between adding members of the example one at a time
 		Example ex = null;
 		int numExceptions = 0;
+		int nextId = 0; // used to uniquely identify a student-teacher pair
 		System.out.println("Parsing all examples...");
 		while (in.hasNext()) {
 			int numExceptionsCurrentExample = 0;
 			if (feature == 0) {	// problem description
 				ex = new Example();
+				ex.id = nextId++;
 				ex.description = in.next();
 			}
 			if (feature == 1) {	// teacherDFA
@@ -275,7 +278,7 @@ public class Automaton
 	}
 
 	// This method reads a single DFA's XML and returns the information as a Document
-	private static Document readXML(InputStream is) 
+	private static Document readXML(InputStream is)
 	{
 		try {
 			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
@@ -286,7 +289,7 @@ public class Automaton
 
 			doc.getDocumentElement().normalize();
 			return doc;
-		} 
+		}
 		catch (Exception e) {
 			System.out.println("Unknown exception!");
 			e.printStackTrace();
@@ -337,7 +340,7 @@ public class Automaton
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-				
+
 				NodeList states = state.getElementsByTagName("state");
 
 				statesDFA = new int[states.getLength()];
@@ -366,11 +369,11 @@ public class Automaton
 					Element eElement = (Element) nNode;
 
 					if (transitionsDFA[Integer.parseInt(eElement.getElementsByTagName("from").item(0).getTextContent())][Integer.parseInt(eElement.getElementsByTagName("to").item(0).getTextContent())] != null) {
-						transitionsDFA[Integer.parseInt(eElement.getElementsByTagName("from").item(0).getTextContent())][Integer.parseInt(eElement.getElementsByTagName("to").item(0).getTextContent())] = 
+						transitionsDFA[Integer.parseInt(eElement.getElementsByTagName("from").item(0).getTextContent())][Integer.parseInt(eElement.getElementsByTagName("to").item(0).getTextContent())] =
 								transitionsDFA[Integer.parseInt(eElement.getElementsByTagName("from").item(0).getTextContent())][Integer.parseInt(eElement.getElementsByTagName("to").item(0).getTextContent())] + eElement.getElementsByTagName("read").item(0).getTextContent();
 					}
 					else {
-						transitionsDFA[Integer.parseInt(eElement.getElementsByTagName("from").item(0).getTextContent())][Integer.parseInt(eElement.getElementsByTagName("to").item(0).getTextContent())] = eElement.getElementsByTagName("read").item(0).getTextContent();		
+						transitionsDFA[Integer.parseInt(eElement.getElementsByTagName("from").item(0).getTextContent())][Integer.parseInt(eElement.getElementsByTagName("to").item(0).getTextContent())] = eElement.getElementsByTagName("read").item(0).getTextContent();
 					}
 
 					transitions = new int[statesDFA.length][statesDFA.length][];
@@ -406,12 +409,12 @@ public class Automaton
 					}
 
 					for (int a = 0; a < transitions.length; a++) {
-						for (int b = 0; b < transitions[a].length; b++) 
+						for (int b = 0; b < transitions[a].length; b++)
 							if (transitions[a][b] == null) {
 								int[] temp = {};
-								transitions[a][b] = temp;	
+								transitions[a][b] = temp;
 							}
-					}	
+					}
 				}
 
 				break;
