@@ -1,9 +1,5 @@
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Scanner;
+import java.io.*;
+import java.util.*;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -50,7 +46,6 @@ public class Automaton
 {
 	public static void main(String[] args)
 	{
-		Z3DFA p = new Z3DFA();
 		try
 		{
 			com.microsoft.z3.Global.ToggleWarningMessages(true);
@@ -60,133 +55,16 @@ public class Automaton
 			System.out.println(Version.getMajor());
 			System.out.print("Z3 Full Version: ");
 			System.out.println(Version.getString());
-			{
-				// setting up the input DFAs for part 1
-				Character alphabet[] = {'a', 'b'};
-				int[] acceptingFinalStates1 = {0};
-				// integer is index into alphabet[]
-				int[][][] acceptingTransitions1 = {
-						{{}, {0}},
-						{{0}, {}}
-				};
 
-				int[] rejectingFinalStates1 = {1};
-				int[][][] rejectingTransitions1 = {
-						{{}, {1}},
-						{{}, {1}}
-				};
+			// runSimpleExamples();
 
-				// Part One
-				p.getMinSepDFA(alphabet, acceptingFinalStates1, acceptingTransitions1, rejectingFinalStates1, rejectingTransitions1);
+			// String filename = null;
+			// System.out.print("Enter a csv file: ");	// try dfa1.csv for an example
+			// Scanner scnr = new Scanner(System.in);
+			// filename = scnr.nextLine();
 
-				// Part Two
-				// setting up the input DFAs for part 2
-				int[] acceptingFinalStates2 = {0, 2};
-				int[][][] acceptingTransitions2 = {
-						{{}, {1}, {0}},
-						{{}, {1}, {0}},
-						{{}, {1}, {0}}
-				};
+			produceBenchmarkStatistics("dfa1.csv");
 
-				p.getMinEquivalentDFA(alphabet, acceptingFinalStates2, acceptingTransitions2);
-
-				/* Previously used DFAs for part 3
-	 			int[] teacherFinalStates = {1};
-	 			int[][][] teacherTransitions = {
-	 				{{1}, {0}},
-	 				{{0}, {1}}
-	 			};
-
-	 			int[] studentFinalStates = {1,2};
-	 			int[][][] studentTransitions = {
-	 				{{}, {0}, {1}},
-	 				{{0}, {1}, {}},
-	 				{{}, {}, {0,1}}
-	 			};
-
-
-//				int[] teacherFinalStates = {0};
-//				int[][][] teacherTransitions = {
-//						{{}, {0,1}},
-//						{{0}, {1}}
-//				};
-//
-//				int[] studentFinalStates = {0};
-//				int[][][] studentTransitions = {
-//						{{}, {1}, {0}},
-//						{{}, {1}, {0}},
-//						{{}, {1}, {0}}
-//				};
-
-				p.getClosestEquivalentDFA(alphabet, teacherFinalStates, teacherTransitions, studentFinalStates, studentTransitions);
-				*/
-
-				// PART THREE
-
-				// #############################################################################
-				// PARSING FILE HERE
-				// #############################################################################
-				// retrieves an arraylist of examples, each with one studentDFA, teacherDFA and a problem description
-				String filename = null;
-				System.out.print("Enter a csv file: ");	// try dfa1.csv for an example
-				Scanner scnr = new Scanner(System.in);
-				filename = scnr.nextLine();
-
-				ArrayList<Example> exs = readCSV(filename);
-
-				int maxStudentStates = 0;
-				int maxStudentStatesPos = 0;
-				int minStudentStates = exs.get(0).studentDFA.states.length;
-				int minStudentStatesPos = 0;
-				for (int a = 0; a < exs.size(); a++) {
-					Example ex = exs.get(a);
-					// part 3
-					if (ex.studentDFA.states.length > maxStudentStates) {
-						maxStudentStates = ex.studentDFA.states.length;
-						maxStudentStatesPos = a;
-					}
-
-					if (ex.studentDFA.states.length < minStudentStates) {
-						minStudentStates = ex.studentDFA.states.length;
-						minStudentStatesPos = a;
-					}
-				}
-
-				long[] endtimes = new long[maxStudentStates + 1];
-				long initTime = System.nanoTime();
-				for (int state = minStudentStates; state <= maxStudentStates; state++) {
-					System.out.println("All examples with " + state + " states:");
-					int numExamplesForCurrState = 0;
-					long startTime = System.nanoTime();
-					for (int a = 0; a < exs.size(); a++) {
-						Example ex = exs.get(a);
-						if (ex.studentDFA.states.length == state) {
-							System.out.println("Example " + ex.id + ":\n");
-							numExamplesForCurrState++;
-							System.out.println(ex.description);
-							p.getClosestEquivalentDFA(ex.teacherDFA.alphabet, ex.teacherDFA.acceptingStates, ex.teacherDFA.transitions, ex.studentDFA.acceptingStates, ex.studentDFA.transitions);
-						}
-					}
-					long endTime = System.nanoTime();
-					System.out.println(numExamplesForCurrState + " examples for state " + state);
-					endtimes[state] = (endTime - startTime) / (1000000 * numExamplesForCurrState);
-				}
-				long finalEndTime = System.nanoTime();
-
-
-				long totalDuration = (finalEndTime - initTime)/1000000;
-				System.out.println("Total time: " + (float)totalDuration/1000 + " seconds");
-				System.out.println("Average time per example: " + totalDuration/exs.size() + " ms");
-
-				System.out.println("Max Student DFA States: " + maxStudentStates + " (at position " + maxStudentStatesPos +
-						")\nMin Student DFA States: " + minStudentStates + " (at position " + minStudentStatesPos + ")");
-
-
-				System.out.println("\nAverage time by number of states: ");
-				for (int state = minStudentStates; state <= maxStudentStates; state++) {
-					System.out.println(state + " States: " + endtimes[state] + " ms per example");
-				}
-			}
 			Log.close();
 			if (Log.isOpen())
 				System.out.println("Log is still open!");
@@ -201,6 +79,170 @@ public class Automaton
 			System.out.println("Stack trace: ");
 			ex.printStackTrace(System.out);
 		}
+	}
+
+	// write csv file with runtimes and other attributes of examples
+	private static void produceBenchmarkStatistics(String filename) throws IOException
+	{
+		Z3DFA p = new Z3DFA();
+		ArrayList<Example> exs = readCSV(filename);
+
+		FileWriter stats = null;
+		File f = new File("stats-" + filename);
+		f.createNewFile();
+		stats = new FileWriter(f);
+
+		stats.write(
+			"id,"+
+			"description,"+
+			"running time (ms),"+
+			"num. student states,"+
+			"num. teacher states,"+
+			"num. characters"+
+			"\n"
+		);
+
+		for(Example ex : exs) {
+			long start = System.nanoTime();
+			p.getClosestEquivalentDFA(ex.teacherDFA.alphabet, ex.teacherDFA.acceptingStates, ex.teacherDFA.transitions, ex.studentDFA.acceptingStates, ex.studentDFA.transitions);
+			long runningTime = (System.nanoTime() - start)/1000000;
+
+			stats.write(
+			ex.id + "," +
+			ex.description + "," +
+			runningTime + "," +
+			ex.teacherDFA.states.length + "," +
+			ex.studentDFA.states.length + "," +
+			ex.studentDFA.alphabet.length + "," +
+			"\n"
+			);
+		}
+
+		stats.flush();
+		stats.close();
+
+		// int maxStudentStates = 0;
+		// int maxStudentStatesPos = 0;
+		// int minStudentStates = exs.get(0).studentDFA.states.length;
+		// int minStudentStatesPos = 0;
+		// for (int a = 0; a < exs.size(); a++) {
+		// 	Example ex = exs.get(a);
+		// 	// part 3
+		// 	if (ex.studentDFA.states.length > maxStudentStates) {
+		// 		maxStudentStates = ex.studentDFA.states.length;
+		// 		maxStudentStatesPos = a;
+		// 	}
+		//
+		// 	if (ex.studentDFA.states.length < minStudentStates) {
+		// 		minStudentStates = ex.studentDFA.states.length;
+		// 		minStudentStatesPos = a;
+		// 	}
+		// }
+		//
+		// long[] endtimes = new long[maxStudentStates + 1];
+		// long initTime = System.nanoTime();
+		// for (int state = minStudentStates; state <= maxStudentStates; state++) {
+		// 	System.out.println("All examples with " + state + " states:");
+		// 	int numExamplesForCurrState = 0;
+		// 	long startTime = System.nanoTime();
+		// 	for (int a = 0; a < exs.size(); a++) {
+		// 		Example ex = exs.get(a);
+		// 		if (ex.studentDFA.states.length == state) {
+		// 			System.out.println("Example " + ex.id + ":\n");
+		// 			numExamplesForCurrState++;
+		// 			System.out.println(ex.description);
+		// 			p.getClosestEquivalentDFA(ex.teacherDFA.alphabet, ex.teacherDFA.acceptingStates, ex.teacherDFA.transitions, ex.studentDFA.acceptingStates, ex.studentDFA.transitions);
+		// 		}
+		// 	}
+		// 	long endTime = System.nanoTime();
+		// 	System.out.println(numExamplesForCurrState + " examples for state " + state);
+		// 	endtimes[state] = (endTime - startTime) / (1000000 * numExamplesForCurrState);
+		// }
+		// long finalEndTime = System.nanoTime();
+		//
+		//
+		// long totalDuration = (finalEndTime - initTime)/1000000;
+		// System.out.println("Total time: " + (float)totalDuration/1000 + " seconds");
+		// System.out.println("Average time per example: " + totalDuration/exs.size() + " ms");
+		//
+		// System.out.println("Max Student DFA States: " + maxStudentStates + " (at position " + maxStudentStatesPos +
+		// 		")\nMin Student DFA States: " + minStudentStates + " (at position " + minStudentStatesPos + ")");
+		//
+		//
+		// System.out.println("\nAverage time by number of states: ");
+		// for (int state = minStudentStates; state <= maxStudentStates; state++) {
+		// 	System.out.println(state + " States: " + endtimes[state] + " ms per example");
+		// }
+	}
+
+	private void runSimpleExamples()
+	{
+		Z3DFA p = new Z3DFA();
+		// setting up the input DFAs for part 1
+		Character alphabet[] = {'a', 'b'};
+		int[] acceptingFinalStates1 = {0};
+		// integer is index into alphabet[]
+		int[][][] acceptingTransitions1 = {
+				{{}, {0}},
+				{{0}, {}}
+		};
+
+		int[] rejectingFinalStates1 = {1};
+		int[][][] rejectingTransitions1 = {
+				{{}, {1}},
+				{{}, {1}}
+		};
+
+		// Part One
+		p.getMinSepDFA(alphabet, acceptingFinalStates1, acceptingTransitions1, rejectingFinalStates1, rejectingTransitions1);
+
+		// Part Two
+		// setting up the input DFAs for part 2
+		int[] acceptingFinalStates2 = {0, 2};
+		int[][][] acceptingTransitions2 = {
+				{{}, {1}, {0}},
+				{{}, {1}, {0}},
+				{{}, {1}, {0}}
+		};
+
+		p.getMinEquivalentDFA(alphabet, acceptingFinalStates2, acceptingTransitions2);
+
+		/* Previously used DFAs for part 3
+		int[] teacherFinalStates = {1};
+		int[][][] teacherTransitions = {
+			{{1}, {0}},
+			{{0}, {1}}
+		};
+
+		int[] studentFinalStates = {1,2};
+		int[][][] studentTransitions = {
+			{{}, {0}, {1}},
+			{{0}, {1}, {}},
+			{{}, {}, {0,1}}
+		};
+
+		int[] teacherFinalStates = {0};
+		int[][][] teacherTransitions = {
+				{{}, {0,1}},
+				{{0}, {1}}
+		};
+
+		int[] studentFinalStates = {0};
+		int[][][] studentTransitions = {
+				{{}, {1}, {0}},
+				{{}, {1}, {0}},
+				{{}, {1}, {0}}
+		};
+
+		p.getClosestEquivalentDFA(alphabet, teacherFinalStates, teacherTransitions, studentFinalStates, studentTransitions);
+		*/
+
+		// PART THREE
+
+		// #############################################################################
+		// PARSING FILE HERE
+		// #############################################################################
+		// retrieves an arraylist of examples, each with one studentDFA, teacherDFA and a problem description
 	}
 
 	// takes in a CSV file as input and parses it
