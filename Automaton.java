@@ -103,14 +103,27 @@ public class Automaton
 		);
 
 		for(Example ex : exs) {
-			long start = System.nanoTime();
-			p.getClosestEquivalentDFA(ex.teacherDFA.alphabet, ex.teacherDFA.acceptingStates, ex.teacherDFA.transitions, ex.studentDFA.acceptingStates, ex.studentDFA.transitions);
-			long runningTime = (System.nanoTime() - start)/1000000;
+			long start = 0;
+			int numChanges = 0;
+			long runningTime = 0;
+			try {
+				start = System.nanoTime();
+					Z3Automata outputDFA = p.getClosestEquivalentDFA(ex.teacherDFA.alphabet, ex.teacherDFA.acceptingStates, ex.teacherDFA.transitions, ex.studentDFA.acceptingStates, ex.studentDFA.transitions);
+
+				numChanges = outputDFA.countNumChanges();
+				runningTime = (System.nanoTime() - start)/1000000;
+			}
+			catch(Exception e) {
+				System.out.println("Failed to run example " + ex.id + ": " + ex.description);
+				e.printStackTrace();
+				System.exit(-1);
+			}
 
 			stats.write(
 			ex.id + "," +
 			ex.description + "," +
 			runningTime + "," +
+			numChanges + "," +
 			ex.teacherDFA.states.length + "," +
 			ex.studentDFA.states.length + "," +
 			ex.studentDFA.alphabet.length + "\n"

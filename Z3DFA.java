@@ -17,9 +17,9 @@ class Z3DFA
 
 		// go in a loop and find the min number of states which are satisfiable
 		while (sat == Status.UNSATISFIABLE) {
-			Optimize opt = ctx.mkOptimize();
 
 			Z3Automata minSepDFA = getNewTargetDFA(ctx, numStates, alphabet);
+			Optimize opt = minSepDFA.opt;
 			addTargetDFAassertions(ctx, opt, minSepDFA);
 
 			addAcceptingAssertions(ctx, opt, numStates, acceptingTransitions, acceptingFinalStates, minSepDFA, "X");
@@ -29,15 +29,16 @@ class Z3DFA
 			// satisfiable or unsatisfiable
 			sat = opt.Check();
 			if (sat == Status.SATISFIABLE) {
-				printModel(opt, minSepDFA);
+				minSepDFA.solve();
+				minSepDFA.printModel();
 			}
 			numStates++;
 		}
 	}
-	
-	
+
+
 	/* ########################### PART TWO ########################### */
-	void getMinEquivalentDFA(Character[] alphabet, int[] acceptingFinalStates, int[][][] acceptingTransitions) 
+	void getMinEquivalentDFA(Character[] alphabet, int[] acceptingFinalStates, int[][][] acceptingTransitions)
 	{
 		System.out.println("DFA Part 2: Get equivalent DFA of a smaller size\n");
 
@@ -49,9 +50,9 @@ class Z3DFA
 
 		while (numStates <= acceptingTransitions.length && sat == Status.UNSATISFIABLE) {
 			// Final states in DFA
-			Optimize opt = ctx.mkOptimize();
 
 			Z3Automata minEquivDFA = getNewTargetDFA(ctx, numStates, alphabet);
+			Optimize opt = minEquivDFA.opt;
 			addTargetDFAassertions(ctx, opt, minEquivDFA);
 
 			BoolExpr[][] aNFA = addAcceptingAssertions(ctx, opt, numStates, acceptingTransitions, acceptingFinalStates, minEquivDFA, "X");
@@ -61,7 +62,8 @@ class Z3DFA
 			sat = opt.Check();
 			if (sat == Status.SATISFIABLE) {
 				found = true;
-				printModel(opt, minEquivDFA);
+				minEquivDFA.solve();
+				minEquivDFA.printModel();
 			}
 
 			numStates++;
@@ -73,18 +75,18 @@ class Z3DFA
 		}
 
 	}
-	
+
 
 	/* ########################### PART THREE ########################### */
-	void getClosestEquivalentDFA(Character[] alphabet, int[] canonicalFinalStates, int[][][] canonicalTransitions, int[] providedFinalStates, int[][][] providedTransitions)
+	Z3Automata getClosestEquivalentDFA(Character[] alphabet, int[] canonicalFinalStates, int[][][] canonicalTransitions, int[] providedFinalStates, int[][][] providedTransitions)
 	{
-		System.out.println("DFA Part 3: Get closest equivalent DFA\n");
+		// System.out.println("DFA Part 3: Get closest equivalent DFA\n");
 
 		int numStates = Math.max(canonicalTransitions.length, providedTransitions.length);
 
 		Context ctx = getNewContext();
-		Optimize opt = ctx.mkOptimize();
 		Z3Automata closestEquivalentDFA = getNewTargetDFA(ctx, numStates, alphabet);
+		Optimize opt = closestEquivalentDFA.opt;
 		addTargetDFAassertions(ctx, opt, closestEquivalentDFA);
 
 		BoolExpr[][] aNFA = addAcceptingAssertions(ctx, opt, numStates, canonicalTransitions, canonicalFinalStates, closestEquivalentDFA, "X");
@@ -95,13 +97,17 @@ class Z3DFA
 
 		Status sat = opt.Check();
 		if (sat == Status.SATISFIABLE) {
-			printModel(opt, closestEquivalentDFA);
+			closestEquivalentDFA.solve();
+			// closestEquivalentDFA.printModel();
 		}
 		else {
 			System.out.println("Failed to generate similar, but correct, automata");
+			throw new RuntimeException();
 		}
+
+		return closestEquivalentDFA;
 	}
-	
+
 
 	private Context getNewContext()
 	{
@@ -130,7 +136,7 @@ class Z3DFA
 			}
 		}
 
-		return new Z3Automata(transitions, finalStates, alphabet);
+		return new Z3Automata(ctx, transitions, finalStates, alphabet);
 	}
 
 
@@ -270,7 +276,9 @@ class Z3DFA
 			for(int toState = 0; toState < desiredTransitions[0].length; toState++) {
 				for(int transitionIdx = 0; transitionIdx < desiredTransitions[fromState][toState].length; transitionIdx++) {
 					int transitionChar = desiredTransitions[fromState][toState][transitionIdx];
-					opt.AssertSoft(outputDFA.transitions[fromState][transitionChar][toState], transitionWt, relationName);
+					BoolExpr softAssertion = outputDFA.transitions[fromState][transitionChar][toState];
+					opt.AssertSoft(softAssertion, transitionWt, relationName);
+					outputDFA.softAssertions.put(softAssertion, new Boolean(true));
 				}
 			}
 		}
@@ -285,97 +293,22 @@ class Z3DFA
 				}
 			}
 			if(isFinal) {
-				opt.AssertSoft(outputDFA.finalStates[fromState], finalStateWt, relationName);
+				BoolExpr softAssertion = outputDFA.finalStates[fromState];
+				opt.AssertSoft(softAssertion, finalStateWt, relationName);
+				outputDFA.softAssertions.put(softAssertion, new Boolean(true));
 			}
 			else {
-				opt.AssertSoft(ctx.mkNot(outputDFA.finalStates[fromState]), finalStateWt, relationName);
+				BoolExpr softAssertion = outputDFA.finalStates[fromState];
+				opt.AssertSoft(ctx.mkNot(softAssertion), finalStateWt, relationName);
+				outputDFA.softAssertions.put(softAssertion, new Boolean(false));
 			}
 		}
 
 	}
-
-
-	// returns an array with values showing which transitions are included in the output
-	private BoolExpr[][][] getTransitionAssignments(Model model, BoolExpr[][][] trans, int numStates, int alphaLen)
-	{
-
-		BoolExpr[][][] transAssignments = new BoolExpr[numStates][alphaLen][numStates];
-
-		for (int i = 0; i < numStates; i++) {
-			for (int j = 0; j < alphaLen; j++) {
-				for (int k = 0; k < numStates; k++) {
-					transAssignments[i][j][k] = (BoolExpr) model.getConstInterp(trans[i][j][k]);
-				}
-			}
-		}
-
-		return transAssignments;
-	}
-	
-
-	// returns an array with values showing which final states are included in the output
-	private BoolExpr[] getFinalStateAssignments(Model model, BoolExpr[] finalStates, int numStates)
-	{
-		BoolExpr[] finalStateAssignments = new BoolExpr[numStates];
-
-		for (int i = 0; i < numStates; i++) {
-			finalStateAssignments[i] = (BoolExpr) model.getConstInterp(finalStates[i]);
-		}
-
-		return finalStateAssignments;
-	}
-
-
-	private void printModel(Optimize opt, Z3Automata targetDFA)
-	{
-		System.out.println("SATISFIABLE with " + targetDFA.numStates + " states");
-		Model model = opt.getModel();
-		BoolExpr[][][] transAssignments = getTransitionAssignments(model, targetDFA.transitions, targetDFA.numStates, targetDFA.alphabet.length);
-		BoolExpr[] finalStateAssignments = getFinalStateAssignments(model, targetDFA.finalStates, targetDFA.numStates);
-
-		printTransitions(transAssignments, targetDFA.numStates, targetDFA.alphabet);
-		printFinalStates(finalStateAssignments, targetDFA.numStates);
-
-		// Uncomment to print the model
-		// System.out.println(model);
-
-		System.out.println("\n--------------------------------------------------\n");
-	}
-
-
-	/*
-	 * Prints all the final states in the output DFA
-	 */
-	private void printFinalStates(BoolExpr[] finalStateAssignments, int numStates)
-	{
-		System.out.println("\nOutput DFA Final States: ");
-		for (int i = 0; i < numStates; i++) {
-			System.out.println("State " + i + ": " + finalStateAssignments[i]);
-		}
-	}
-
-
-	/*
-	 * Prints all the transitions in the output DFA
-	 */
-	private void printTransitions(BoolExpr[][][] transAssignments, int numStates, Character[] alphabet)
-	{
-		System.out.println("\nOutput DFA Transitions: \n");
-		System.out.println("From    Transition On    To    Value");
-		for (int i = 0; i < numStates; i++) {
-			for (int j = 0; j < alphabet.length; j++) {
-				for (int k = 0; k < numStates; k++) {
-					if (transAssignments[i][j][k].toString().equals("true"))
-						System.out.println(" " + i + "            " + alphabet[j] + "          "  + k + "     " + transAssignments[i][j][k]);
-				}
-			}
-		}
-	}
-
 
 }
 
-class Z3Automata 
+class Z3Automata
 {
 	BoolExpr[] finalStates;
 	// BoolExpr[state s][transition a][state d(s,a)]
@@ -383,11 +316,131 @@ class Z3Automata
 	Character[] alphabet;
 	int numStates;
 
-	Z3Automata(BoolExpr[][][] transitions, BoolExpr[] finalStates, Character[] alphabet)
+	Optimize opt = null;
+	Model model;
+
+	// maps soft assertions to their desired boolean value
+	// e.g. finalStates[i] : true
+	// this can then be used to see how many soft assertions were satisified
+	HashMap<BoolExpr,Boolean> softAssertions;
+
+	Z3Automata(Context ctx, BoolExpr[][][] transitions, BoolExpr[] finalStates, Character[] alphabet)
 	{
+		this.opt = ctx.mkOptimize();
+		this.model = null;
+
 		this.transitions = transitions;
 		this.finalStates = finalStates;
 		this.alphabet = alphabet;
 		this.numStates = transitions.length;
+
+		this.softAssertions = new HashMap<BoolExpr,Boolean>();
+	}
+
+	public void solve()
+	{
+		this.model = this.opt.getModel();
+	}
+
+	public int countNumChanges()
+	{
+		if(this.model == null || softAssertions.size() == 0){ throw new UnsupportedOperationException(); }
+
+		int numSatisfied = 0;
+		for(BoolExpr softAssertion : this.softAssertions.keySet()) {
+			BoolExpr assignment = (BoolExpr) this.model.getConstInterp(softAssertion);
+
+			boolean expectedAssignment = this.softAssertions.get(softAssertion);
+
+			if(assignment.isTrue() == expectedAssignment) {
+				numSatisfied++;
+			}
+		}
+
+		return this.softAssertions.size() - numSatisfied;
+	}
+
+	// returns an array with values showing which transitions are included in the output
+	private BoolExpr[][][] getTransitionAssignments()
+	{
+		if(this.model == null){ throw new UnsupportedOperationException(); }
+
+		BoolExpr[][][] transAssignments = new BoolExpr[this.numStates][this.alphabet.length][this.numStates];
+
+		for (int i = 0; i < this.numStates; i++) {
+			for (int j = 0; j < this.alphabet.length; j++) {
+				for (int k = 0; k < this.numStates; k++) {
+					transAssignments[i][j][k] = (BoolExpr) this.model.getConstInterp(this.transitions[i][j][k]);
+				}
+			}
+		}
+
+		return transAssignments;
+	}
+
+
+	// returns an array with values showing which final states are included in the output
+	private BoolExpr[] getFinalStateAssignments()
+	{
+		if(this.model == null){ throw new UnsupportedOperationException(); }
+
+		BoolExpr[] finalStateAssignments = new BoolExpr[this.numStates];
+
+		for (int i = 0; i < this.numStates; i++) {
+			finalStateAssignments[i] = (BoolExpr) this.model.getConstInterp(this.finalStates[i]);
+		}
+
+		return finalStateAssignments;
+	}
+
+
+	public void printModel()
+	{
+		if(this.model == null){ throw new UnsupportedOperationException(); }
+
+		System.out.println("SATISFIABLE with " + this.numStates + " states");
+		BoolExpr[][][] transAssignments = getTransitionAssignments();
+		BoolExpr[] finalStateAssignments = getFinalStateAssignments();
+
+		printTransitions(transAssignments);
+		printFinalStates(finalStateAssignments);
+
+		// Uncomment to print the model
+		// System.out.println(model);
+
+		System.out.println("\n--------------------------------------------------\n");
+	}
+
+	/*
+	* Prints all the final states in the output DFA
+	*/
+	private void printFinalStates(BoolExpr[] finalStateAssignments)
+	{
+		if(this.model == null){ throw new UnsupportedOperationException(); }
+
+		System.out.println("\nOutput DFA Final States: ");
+		for (int i = 0; i < this.numStates; i++) {
+			System.out.println("State " + i + ": " + finalStateAssignments[i]);
+		}
+	}
+
+
+	/*
+	* Prints all the transitions in the output DFA
+	*/
+	private void printTransitions(BoolExpr[][][] transAssignments)
+	{
+		if(this.model == null){ throw new UnsupportedOperationException(); }
+
+		System.out.println("\nOutput DFA Transitions: \n");
+		System.out.println("From    Transition On    To    Value");
+		for (int i = 0; i < this.numStates; i++) {
+			for (int j = 0; j < this.alphabet.length; j++) {
+				for (int k = 0; k < this.numStates; k++) {
+					if (transAssignments[i][j][k].toString().equals("true"))
+					System.out.println(" " + i + "            " + this.alphabet[j] + "          "  + k + "     " + transAssignments[i][j][k]);
+				}
+			}
+		}
 	}
 }
