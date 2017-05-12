@@ -96,6 +96,7 @@ public class Automaton
 			"id,"+
 			"description,"+
 			"running time (ms),"+
+			"num. changes,"+
 			"num. student states,"+
 			"num. teacher states,"+
 			"num. characters"+
@@ -112,22 +113,26 @@ public class Automaton
 
 				numChanges = outputDFA.countNumChanges();
 				runningTime = (System.nanoTime() - start)/1000000;
+
+				// ignore examples where student & teacher DFAs are equivalent
+				if(numChanges > 0) {
+					stats.write(
+						ex.id + "," +
+						ex.description + "," +
+						runningTime + "," +
+						numChanges + "," +
+						ex.teacherDFA.states.length + "," +
+						ex.studentDFA.states.length + "," +
+						ex.studentDFA.alphabet.length + "\n"
+					);
+				}
 			}
 			catch(Exception e) {
-				System.out.println("Failed to run example " + ex.id + ": " + ex.description);
-				e.printStackTrace();
-				System.exit(-1);
+				System.out.println("ERROR: Example " + ex.id + ": " + ex.description);
+				// e.printStackTrace();
+				// System.exit(-1);
 			}
 
-			stats.write(
-			ex.id + "," +
-			ex.description + "," +
-			runningTime + "," +
-			numChanges + "," +
-			ex.teacherDFA.states.length + "," +
-			ex.studentDFA.states.length + "," +
-			ex.studentDFA.alphabet.length + "\n"
-			);
 		}
 
 		stats.flush();

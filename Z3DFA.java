@@ -101,8 +101,8 @@ class Z3DFA
 			// closestEquivalentDFA.printModel();
 		}
 		else {
-			System.out.println("Failed to generate similar, but correct, automata");
-			throw new RuntimeException();
+			// System.out.println("Failed to generate similar, but correct, automata");
+			throw new RuntimeException("Failed to generate similar, but correct, automata");
 		}
 
 		return closestEquivalentDFA;
