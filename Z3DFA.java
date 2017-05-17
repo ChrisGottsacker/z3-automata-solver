@@ -142,18 +142,18 @@ class Z3DFA
 
 	private void addTargetDFAassertions(Context ctx, Optimize opt, Z3Automata targetDFA)
 	{
-		// assert DFA not NFA
+		// assert that the transition function is deterministic
 		for (int j = 0; j < targetDFA.alphabet.length; j++) {
 			for (int i = 0; i < targetDFA.numStates; i++) {
-				BoolExpr bexp = ctx.mkBool(false);
 				for (int k = 0; k < targetDFA.numStates; k++) {
-					bexp = ctx.mkOr(ctx.mkNot(targetDFA.transitions[i][j][k]), bexp);
+					for (int kk = k+1; kk < targetDFA.numStates; kk++) {
+						opt.Assert(ctx.mkOr(ctx.mkNot(targetDFA.transitions[i][j][k]), ctx.mkNot(targetDFA.transitions[i][j][kk])));
+					}
 				}
-				opt.Assert(bexp);
 			}
 		}
 
-		// assert DFA's transition function is total (i.e. complete DFA)
+		// assert the transition function is total (i.e. complete DFA)
 		for (int j = 0; j < targetDFA.alphabet.length; j++) {
 			for (int i = 0; i < targetDFA.numStates; i++) {
 				BoolExpr bexp = ctx.mkBool(false);
@@ -225,9 +225,10 @@ class Z3DFA
 			for (int j = 0; j < aSz; j++) {
 				for (int k = 0; k < numStates; k++) {
 					for (int l = 0; l < aSz; l++) {
-						if (acceptingTransitions[j][l] != null)
+						if (acceptingTransitions[j][l] != null){
 							for (int m = 0; m < acceptingTransitions[j][l].length; m++){
 								opt.Assert(ctx.mkImplies(ctx.mkAnd(aNFA[i][j], targetDFA.transitions[i][ acceptingTransitions[j][l][m] ][k]), aNFA[k][l]));
+							}
 						}
 					}
 				}
@@ -247,20 +248,20 @@ class Z3DFA
 
 	private void addEquivalenceAssertions(Context ctx, Optimize opt, BoolExpr[][] aNFA, int[] acceptingFinalStates, Z3Automata minEquivDFA)
 	{
-		for (int i = 0; i < aNFA.length; i++) {
-			for (int j = 0; j < aNFA[i].length; j++) {
+		for (int outputState = 0; outputState < aNFA.length; outputState++) {
+			for (int inputState = 0; inputState < aNFA[outputState].length; inputState++) {
 				boolean isFinal = false;
 				for (int a = 0; a < acceptingFinalStates.length; a++) {
-					if(j == acceptingFinalStates[a]) {
+					if(inputState == acceptingFinalStates[a]) {
 						isFinal = true;
 						break;
 					}
 				}
 				if(isFinal) {
-					opt.Assert(ctx.mkImplies(ctx.mkNot(minEquivDFA.finalStates[i]), ctx.mkNot(aNFA[i][j])));
+					opt.Assert(ctx.mkImplies(ctx.mkNot(minEquivDFA.finalStates[outputState]), ctx.mkNot(aNFA[outputState][inputState])));
 				}
 				else {
-					opt.Assert(ctx.mkImplies(minEquivDFA.finalStates[i], ctx.mkNot(aNFA[i][j])));
+					opt.Assert(ctx.mkImplies(minEquivDFA.finalStates[outputState], ctx.mkNot(aNFA[outputState][inputState])));
 				}
 			}
 		}
@@ -284,21 +285,21 @@ class Z3DFA
 		}
 
 		// for all final states in desired automata, add soft assertion
-		for(int fromState = 0; fromState < outputDFA.finalStates.length; fromState++) {
+		for(int state = 0; state < outputDFA.finalStates.length; state++) {
 			boolean isFinal = false;
 			for (int f = 0; f < desiredFinalStates.length; f++) {
-				if(fromState == desiredFinalStates[f]) {
+				if(state == desiredFinalStates[f]) {
 					isFinal = true;
 					break;
 				}
 			}
 			if(isFinal) {
-				BoolExpr softAssertion = outputDFA.finalStates[fromState];
+				BoolExpr softAssertion = outputDFA.finalStates[state];
 				opt.AssertSoft(softAssertion, finalStateWt, relationName);
 				outputDFA.softAssertions.put(softAssertion, new Boolean(true));
 			}
 			else {
-				BoolExpr softAssertion = outputDFA.finalStates[fromState];
+				BoolExpr softAssertion = outputDFA.finalStates[state];
 				opt.AssertSoft(ctx.mkNot(softAssertion), finalStateWt, relationName);
 				outputDFA.softAssertions.put(softAssertion, new Boolean(false));
 			}
